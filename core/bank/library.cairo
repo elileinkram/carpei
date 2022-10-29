@@ -270,8 +270,8 @@ namespace TOKEN {
             collection_address, token_id, appraisal_post_expiry_date
         );
         assert_not_zero(appraisal_member_count);
-        assert_nn_le(index_of_median, appraisal_member_count - 1);
         assert appraisal_member_count = nft_member_appraisals_len;
+        assert_nn_le(index_of_median, appraisal_member_count - 1);
         _check_sorted_appraisals(
             collection_address,
             token_id,
