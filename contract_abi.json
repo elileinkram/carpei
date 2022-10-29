@@ -57,21 +57,6 @@
     {
         "data": [
             {
-                "name": "collection_address",
-                "type": "felt"
-            },
-            {
-                "name": "token_id",
-                "type": "Uint256"
-            }
-        ],
-        "keys": [],
-        "name": "nft_registered",
-        "type": "event"
-    },
-    {
-        "data": [
-            {
                 "name": "from_",
                 "type": "felt"
             },
@@ -101,6 +86,21 @@
         ],
         "keys": [],
         "name": "nft_median_appraisal_verified",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "collection_address",
+                "type": "felt"
+            },
+            {
+                "name": "token_id",
+                "type": "Uint256"
+            }
+        ],
+        "keys": [],
+        "name": "nft_registered",
         "type": "event"
     },
     {

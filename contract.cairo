@@ -118,7 +118,7 @@ func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_pt
     collection_address: felt, token_id: Uint256, value: Uint256, power_token_amount: Uint256
 ) -> (success: felt) {
     let (nft_) = nft_listings.read(collection_address, token_id);
-    return DAO.appraise_nft(
+    return NFT.appraise_nft(
         nft_.from_,
         collection_address,
         token_id,
@@ -137,7 +137,7 @@ func verify_median_appraisal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     nft_member_appraisals: felt*,
 ) -> (success: felt) {
     let (nft_) = nft_listings.read(collection_address, token_id);
-    return DAO.verify_median_appraisal(
+    return NFT.verify_median_appraisal(
         index_of_median,
         nft_.appraisal_post_expiry_date,
         nft_.lockup_post_expiry_date,
