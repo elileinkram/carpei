@@ -57,11 +57,26 @@
     {
         "data": [
             {
-                "name": "from_",
+                "name": "collection_address",
                 "type": "felt"
             },
             {
+                "name": "token_id",
+                "type": "Uint256"
+            }
+        ],
+        "keys": [],
+        "name": "nft_registered",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
                 "name": "collection_address",
+                "type": "felt"
+            },
+            {
+                "name": "from_",
                 "type": "felt"
             },
             {
@@ -89,21 +104,6 @@
         "type": "event"
     },
     {
-        "data": [
-            {
-                "name": "collection_address",
-                "type": "felt"
-            },
-            {
-                "name": "token_id",
-                "type": "Uint256"
-            }
-        ],
-        "keys": [],
-        "name": "nft_registered",
-        "type": "event"
-    },
-    {
         "inputs": [
             {
                 "name": "name",
@@ -126,7 +126,7 @@
                 "type": "felt"
             },
             {
-                "name": "nft_lockup_period",
+                "name": "nft_fundraising_period",
                 "type": "felt"
             },
             {
@@ -280,11 +280,15 @@
                 "type": "felt"
             },
             {
+                "name": "from_",
+                "type": "felt"
+            },
+            {
                 "name": "token_id",
                 "type": "Uint256"
             },
             {
-                "name": "value",
+                "name": "appraisal_value",
                 "type": "Uint256"
             },
             {

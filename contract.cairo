@@ -9,8 +9,9 @@ from introspection.erc165.library import ERC165
 from tokens.erc20.library import ERC20
 from tokens.erc721.IERC721 import IERC721
 from utils.constants.library import IERC721_RECEIVER_ID, IERC20_ID, IERC20Metadata_ID
-from core.asset_management.library import NFT, nft_listings
-from core.governance.library import DAO, nft_lockup_period, nft_appraisal_period
+from core.gallery.library import NFT, nft_listings
+from core.senate.library import DAO, nft_fundraising_period, nft_appraisal_period
+from core.bank.library import TOKEN
 from starkware.cairo.common.bool import TRUE
 
 @constructor
@@ -20,7 +21,7 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     decimals: felt,
     initial_supply: Uint256,
     recipient: felt,
-    nft_lockup_period: felt,
+    nft_fundraising_period: felt,
     nft_appraisal_period: felt,
 ) {
     ERC165.register_interface(IERC20_ID);
@@ -28,7 +29,7 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     ERC165.register_interface(IERC721_RECEIVER_ID);
     ERC20.initializer(name, symbol, decimals);
     ERC20._mint(recipient, initial_supply);
-    DAO.initializer(nft_lockup_period, nft_appraisal_period);
+    DAO.initializer(nft_fundraising_period, nft_appraisal_period);
     return ();
 }
 
@@ -90,24 +91,28 @@ func allowance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func onERC721Received{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     TRUE, from_: felt, tokenId: Uint256, data_len: felt, data: felt*
 ) -> (selector: felt) {
-    let (nft_lockup_period_) = nft_lockup_period.read();
     let (nft_appraisal_period_) = nft_appraisal_period.read();
+    let (nft_fundraising_period_) = nft_fundraising_period.read();
     return NFT.onReceived(
-        from_, tokenId, data_len, data, nft_lockup_period_, nft_appraisal_period_
+        from_, tokenId, data_len, data, nft_appraisal_period_, nft_fundraising_period_
     );
 }
 
 @external
 func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    collection_address: felt, token_id: Uint256, value: Uint256, power_token_amount: Uint256
+    collection_address: felt,
+    from_: felt,
+    token_id: Uint256,
+    appraisal_value: Uint256,
+    power_token_amount: Uint256,
 ) -> (success: felt) {
     let (nft_) = nft_listings.read(collection_address, token_id);
-    return NFT.appraise_nft(
-        nft_.from_,
+    return TOKEN.appraise_nft(
+        from_,
         collection_address,
         token_id,
         nft_.appraisal_post_expiry_date,
-        value,
+        appraisal_value,
         power_token_amount,
     );
 }
@@ -121,14 +126,14 @@ func verify_median_appraisal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     nft_member_appraisals: felt*,
 ) -> (success: felt) {
     let (nft_) = nft_listings.read(collection_address, token_id);
-    return NFT.verify_median_appraisal(
+    return TOKEN.verify_median_appraisal(
         index_of_median,
-        nft_.appraisal_post_expiry_date,
-        nft_.lockup_post_expiry_date,
         collection_address,
         token_id,
         nft_member_appraisals_len,
         nft_member_appraisals,
+        nft_.appraisal_post_expiry_date,
+        nft_.fundraising_post_expiry_date,
     );
 }
 
