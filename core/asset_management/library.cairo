@@ -87,8 +87,7 @@ namespace NFT {
         nft_lockup_period: felt,
         nft_appraisal_period: felt,
     ) -> (selector: felt) {
-        assert_not_zero(data_len);
-        assert data_len = 1;
+        assert TRUE = data_len;
         let nft_insurance_period = data[0];
         let (collection_address) = get_caller_address();
         return _list_nft(
@@ -126,7 +125,7 @@ namespace NFT {
         let appraisal_post_expiry_date: felt = block_timestamp + nft_appraisal_period + 1;
         let insurance_post_expiry_date: felt = lockup_post_expiry_date + nft_insurance_period;
         let (nft_) = nft_listings.read(collection_address, token_id);
-        assert nft_.from_ = 0;
+        assert FALSE = nft_.from_;
         nft_listings.write(
             collection_address,
             token_id,
@@ -208,7 +207,7 @@ namespace NFT {
         if (appraisal_is_zero == TRUE) {
             let (power_is_zero) = uint256_eq(power_token_amount, Uint256(0, 0));
             if (power_is_zero == FALSE) {
-                assert 0 = 1;
+                assert TRUE = FALSE;
                 return ();
             }
             tempvar range_check_ptr = range_check_ptr;
@@ -292,7 +291,7 @@ namespace NFT {
         let appraisal_value = appraisal.appraisal_value;
         let (is_less_than_previous_value) = uint256_lt(appraisal_value, prev_appraisal_value);
         if (is_less_than_previous_value == TRUE) {
-            assert 0 = 1;
+            assert TRUE = FALSE;
             return ();
         }
         if (nft_member_appraisals_len == 1) {
@@ -367,13 +366,13 @@ namespace NFT {
         nft_member_appraisals_len: felt,
         nft_member_appraisals: felt*,
     ) -> (success: felt) {
-        assert_not_zero(nft_member_appraisals_len);
         let (block_timestamp) = get_block_timestamp();
         assert_in_range(block_timestamp, appraisal_post_expiry_date - 1, lockup_post_expiry_date);
         let (appraisal_member_count) = nft_appraisal_member_count.read(
             collection_address, token_id, appraisal_post_expiry_date
         );
-        assert nft_member_appraisals_len = appraisal_member_count;
+        assert_not_zero(appraisal_member_count);
+        assert appraisal_member_count = nft_member_appraisals_len;
         _check_sorted_appraisals(
             collection_address,
             token_id,
