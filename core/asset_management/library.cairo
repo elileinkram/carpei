@@ -278,7 +278,7 @@ namespace NFT {
         );
     }
 
-    func _check_sorted_list{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    func _check_sorted_appraisals{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         collection_address: felt,
         token_id: Uint256,
         appraisal_post_expiry_date: felt,
@@ -298,7 +298,7 @@ namespace NFT {
         if (nft_member_appraisals_len == 1) {
             return ();
         }
-        return _check_sorted_list(
+        return _check_sorted_appraisals(
             collection_address,
             token_id,
             appraisal_post_expiry_date,
@@ -374,7 +374,7 @@ namespace NFT {
             collection_address, token_id, appraisal_post_expiry_date
         );
         assert nft_member_appraisals_len = appraisal_member_count;
-        _check_sorted_list(
+        _check_sorted_appraisals(
             collection_address,
             token_id,
             appraisal_post_expiry_date,
