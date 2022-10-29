@@ -10,12 +10,7 @@ from tokens.erc20.library import ERC20
 from tokens.erc721.IERC721 import IERC721
 from utils.constants.library import IERC721_RECEIVER_ID, IERC20_ID, IERC20Metadata_ID
 from core.asset_management.library import NFT, nft_listings
-from core.governance.library import (
-    DAO,
-    nft_lockup_period,
-    nft_appraisal_period,
-    nft_fundraising_period,
-)
+from core.governance.library import DAO, nft_lockup_period, nft_appraisal_period
 from starkware.cairo.common.bool import TRUE
 
 @constructor
@@ -25,16 +20,15 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     decimals: felt,
     initial_supply: Uint256,
     recipient: felt,
-    _nft_lockup_period: felt,
-    _nft_appraisal_period: felt,
-    _nft_fundraising_period: felt,
+    nft_lockup_period: felt,
+    nft_appraisal_period: felt,
 ) {
     ERC165.register_interface(IERC20_ID);
     ERC165.register_interface(IERC20Metadata_ID);
     ERC165.register_interface(IERC721_RECEIVER_ID);
     ERC20.initializer(name, symbol, decimals);
     ERC20._mint(recipient, initial_supply);
-    DAO.initializer(_nft_lockup_period, _nft_appraisal_period, _nft_fundraising_period);
+    DAO.initializer(nft_lockup_period, nft_appraisal_period);
     return ();
 }
 
@@ -98,15 +92,8 @@ func onERC721Received{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
 ) -> (selector: felt) {
     let (nft_lockup_period_) = nft_lockup_period.read();
     let (nft_appraisal_period_) = nft_appraisal_period.read();
-    let (nft_fundraising_period_) = nft_fundraising_period.read();
     return NFT.onReceived(
-        from_,
-        tokenId,
-        data_len,
-        data,
-        nft_lockup_period_,
-        nft_appraisal_period_,
-        nft_fundraising_period_,
+        from_, tokenId, data_len, data, nft_lockup_period_, nft_appraisal_period_
     );
 }
 

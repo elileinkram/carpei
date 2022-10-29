@@ -27,6 +27,7 @@ from starkware.cairo.common.math import (
     assert_lt,
     assert_in_range,
     unsigned_div_rem,
+    assert_nn,
 )
 
 struct NFT_ {
@@ -34,7 +35,6 @@ struct NFT_ {
     insurance_post_expiry_date: felt,
     lockup_post_expiry_date: felt,
     appraisal_post_expiry_date: felt,
-    fundraising_post_expiry_date: felt,
 }
 
 struct Appraisal {
@@ -84,17 +84,15 @@ namespace NFT {
         data: felt*,
         nft_lockup_period: felt,
         nft_appraisal_period: felt,
-        nft_fundraising_period: felt,
     ) -> (selector: felt) {
         assert TRUE = data_len;
         let nft_insurance_period = data[0];
-        assert_lt(0, nft_insurance_period);
+        assert_lt(nft_lockup_period, nft_insurance_period);
         let (collection_address) = get_caller_address();
         return _onReceived(
             nft_insurance_period,
             nft_lockup_period,
             nft_appraisal_period,
-            nft_fundraising_period,
             collection_address,
             from_,
             tokenId,
@@ -116,7 +114,6 @@ namespace NFT {
         nft_insurance_period: felt,
         nft_lockup_period: felt,
         nft_appraisal_period: felt,
-        nft_fundraising_period: felt,
         collection_address: felt,
         from_: felt,
         token_id: Uint256,
@@ -125,13 +122,12 @@ namespace NFT {
         let lockup_post_expiry_date: felt = block_timestamp + nft_lockup_period + 1;
         let appraisal_post_expiry_date: felt = block_timestamp + nft_appraisal_period + 1;
         let insurance_post_expiry_date: felt = lockup_post_expiry_date + nft_insurance_period;
-        let fundraising_post_expiry_date: felt = lockup_post_expiry_date + nft_fundraising_period;
         let (nft_) = nft_listings.read(collection_address, token_id);
         assert FALSE = nft_.from_;
         nft_listings.write(
             collection_address,
             token_id,
-            NFT_(from_, insurance_post_expiry_date, lockup_post_expiry_date, appraisal_post_expiry_date, fundraising_post_expiry_date,),
+            NFT_(from_, insurance_post_expiry_date, lockup_post_expiry_date, appraisal_post_expiry_date),
         );
         return ();
     }
@@ -140,7 +136,6 @@ namespace NFT {
         nft_insurance_period: felt,
         nft_lockup_period: felt,
         nft_appraisal_period: felt,
-        nft_fundraising_period: felt,
         collection_address: felt,
         from_: felt,
         token_id: Uint256,
@@ -150,7 +145,6 @@ namespace NFT {
             nft_insurance_period,
             nft_lockup_period,
             nft_appraisal_period,
-            nft_fundraising_period,
             collection_address,
             from_,
             token_id,

@@ -126,15 +126,11 @@
                 "type": "felt"
             },
             {
-                "name": "_nft_lockup_period",
+                "name": "nft_lockup_period",
                 "type": "felt"
             },
             {
-                "name": "_nft_appraisal_period",
-                "type": "felt"
-            },
-            {
-                "name": "_nft_fundraising_period",
+                "name": "nft_appraisal_period",
                 "type": "felt"
             }
         ],
