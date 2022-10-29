@@ -260,7 +260,6 @@ namespace NFT {
         power_token_amount: Uint256,
     ) -> (success: felt) {
         assert_not_zero(from_);
-        uint256_check(token_id);
         uint256_check(appraisal_value);
         uint256_check(power_token_amount);
         let (block_timestamp) = get_block_timestamp();
