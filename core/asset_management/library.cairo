@@ -87,10 +87,11 @@ namespace NFT {
         nft_lockup_period: felt,
         nft_appraisal_period: felt,
     ) -> (selector: felt) {
+        assert_not_zero(data_len);
         assert data_len = 1;
         let nft_insurance_period = data[0];
         let (collection_address) = get_caller_address();
-        list_nft(
+        return _list_nft(
             min_nft_insurance_period,
             nft_insurance_period,
             nft_lockup_period,
@@ -99,7 +100,6 @@ namespace NFT {
             from_,
             tokenId,
         );
-        return (selector=IERC721_RECEIVER_ID);
     }
 
     func _transfer_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -135,7 +135,7 @@ namespace NFT {
         return ();
     }
 
-    func list_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    func _list_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         min_nft_insurance_period: felt,
         nft_insurance_period: felt,
         nft_lockup_period: felt,
@@ -143,7 +143,7 @@ namespace NFT {
         collection_address: felt,
         from_: felt,
         token_id: Uint256,
-    ) -> (success: felt) {
+    ) -> (selector: felt) {
         assert_lt(min_nft_insurance_period - 1, nft_insurance_period);
         _transfer_nft(collection_address, from_, token_id);
         _register_nft(
@@ -155,7 +155,7 @@ namespace NFT {
             token_id,
         );
         nft_registered.emit(collection_address, token_id);
-        return (success=TRUE);
+        return (selector=IERC721_RECEIVER_ID);
     }
 
     func _vote_count_has_changed{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(

@@ -18,33 +18,6 @@ from starkware.cairo.common.uint256 import (
 )
 from starkware.cairo.common.math import assert_lt, unsigned_div_rem
 
-namespace SafeFelt {
-    func add{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(a: felt, b: felt) -> (
-        c: felt
-    ) {
-        let c = a + b;
-        assert_lt(a, c);
-        return (c=c);
-    }
-
-    func sub{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(a: felt, b: felt) -> (
-        c: felt
-    ) {
-        let c = a - b;
-        assert_lt(c, a);
-        return (c=c);
-    }
-
-    func mul{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(a: felt, b: felt) -> (
-        c: felt
-    ) {
-        let c = a * b;
-        let (q, _) = unsigned_div_rem(a, b);
-        assert c = q;
-        return (c=c);
-    }
-}
-
 namespace SafeUint256 {
     // Adds two integers.
     // Reverts if the sum overflows.
