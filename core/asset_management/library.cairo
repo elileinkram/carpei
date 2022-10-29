@@ -23,11 +23,9 @@ from starkware.cairo.common.uint256 import (
 )
 from starkware.cairo.common.math import (
     assert_not_zero,
-    assert_nn_le,
     assert_not_equal,
     assert_lt,
     assert_in_range,
-    assert_nn,
     unsigned_div_rem,
 )
 
@@ -36,6 +34,7 @@ struct NFT_ {
     insurance_post_expiry_date: felt,
     lockup_post_expiry_date: felt,
     appraisal_post_expiry_date: felt,
+    fundraising_post_expiry_date: felt,
 }
 
 struct Appraisal {
@@ -79,22 +78,23 @@ func nft_registered(collection_address: felt, token_id: Uint256) {
 
 namespace NFT {
     func onReceived{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        min_nft_insurance_period: felt,
         from_: felt,
         tokenId: Uint256,
         data_len: felt,
         data: felt*,
         nft_lockup_period: felt,
         nft_appraisal_period: felt,
+        nft_fundraising_period: felt,
     ) -> (selector: felt) {
         assert TRUE = data_len;
         let nft_insurance_period = data[0];
+        assert_lt(0, nft_insurance_period);
         let (collection_address) = get_caller_address();
-        return _list_nft(
-            min_nft_insurance_period,
+        return _onReceived(
             nft_insurance_period,
             nft_lockup_period,
             nft_appraisal_period,
+            nft_fundraising_period,
             collection_address,
             from_,
             tokenId,
@@ -116,6 +116,7 @@ namespace NFT {
         nft_insurance_period: felt,
         nft_lockup_period: felt,
         nft_appraisal_period: felt,
+        nft_fundraising_period: felt,
         collection_address: felt,
         from_: felt,
         token_id: Uint256,
@@ -124,31 +125,32 @@ namespace NFT {
         let lockup_post_expiry_date: felt = block_timestamp + nft_lockup_period + 1;
         let appraisal_post_expiry_date: felt = block_timestamp + nft_appraisal_period + 1;
         let insurance_post_expiry_date: felt = lockup_post_expiry_date + nft_insurance_period;
+        let fundraising_post_expiry_date: felt = lockup_post_expiry_date + nft_fundraising_period;
         let (nft_) = nft_listings.read(collection_address, token_id);
         assert FALSE = nft_.from_;
         nft_listings.write(
             collection_address,
             token_id,
-            NFT_(from_, insurance_post_expiry_date, lockup_post_expiry_date, appraisal_post_expiry_date,),
+            NFT_(from_, insurance_post_expiry_date, lockup_post_expiry_date, appraisal_post_expiry_date, fundraising_post_expiry_date,),
         );
         return ();
     }
 
-    func _list_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        min_nft_insurance_period: felt,
+    func _onReceived{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         nft_insurance_period: felt,
         nft_lockup_period: felt,
         nft_appraisal_period: felt,
+        nft_fundraising_period: felt,
         collection_address: felt,
         from_: felt,
         token_id: Uint256,
     ) -> (selector: felt) {
-        assert_lt(min_nft_insurance_period - 1, nft_insurance_period);
         _transfer_nft(collection_address, from_, token_id);
         _register_nft(
             nft_insurance_period,
             nft_lockup_period,
             nft_appraisal_period,
+            nft_fundraising_period,
             collection_address,
             from_,
             token_id,

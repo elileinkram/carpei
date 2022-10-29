@@ -14,7 +14,7 @@ from core.governance.library import (
     DAO,
     nft_lockup_period,
     nft_appraisal_period,
-    min_nft_insurance_period,
+    nft_fundraising_period,
 )
 from starkware.cairo.common.bool import TRUE
 
@@ -27,17 +27,14 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     recipient: felt,
     _nft_lockup_period: felt,
     _nft_appraisal_period: felt,
-    _nft_funding_period: felt,
-    _min_nft_insurance_period: felt,
+    _nft_fundraising_period: felt,
 ) {
     ERC165.register_interface(IERC20_ID);
     ERC165.register_interface(IERC20Metadata_ID);
     ERC165.register_interface(IERC721_RECEIVER_ID);
     ERC20.initializer(name, symbol, decimals);
     ERC20._mint(recipient, initial_supply);
-    DAO.initializer(
-        _nft_lockup_period, _nft_appraisal_period, _nft_funding_period, _min_nft_insurance_period
-    );
+    DAO.initializer(_nft_lockup_period, _nft_appraisal_period, _nft_fundraising_period);
     return ();
 }
 
@@ -101,15 +98,15 @@ func onERC721Received{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
 ) -> (selector: felt) {
     let (nft_lockup_period_) = nft_lockup_period.read();
     let (nft_appraisal_period_) = nft_appraisal_period.read();
-    let (min_nft_insurance_period_) = min_nft_insurance_period.read();
+    let (nft_fundraising_period_) = nft_fundraising_period.read();
     return NFT.onReceived(
-        min_nft_insurance_period_,
         from_,
         tokenId,
         data_len,
         data,
         nft_lockup_period_,
         nft_appraisal_period_,
+        nft_fundraising_period_,
     );
 }
 
