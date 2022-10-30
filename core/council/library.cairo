@@ -15,7 +15,7 @@ func nft_fundraising_period() -> (res: felt) {
 func nft_appraisal_period() -> (res: felt) {
 }
 
-namespace DAO {
+namespace Council {
     func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         nft_fundraising_period_: felt, nft_appraisal_period_: felt
     ) {

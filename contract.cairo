@@ -9,9 +9,9 @@ from introspection.erc165.library import ERC165
 from tokens.erc20.library import ERC20
 from tokens.erc721.IERC721 import IERC721
 from utils.constants.library import IERC721_RECEIVER_ID, IERC20_ID, IERC20Metadata_ID
-from core.gallery.library import NFT, nft_listings
-from core.council.library import DAO, nft_fundraising_period, nft_appraisal_period
-from core.bank.library import TOKEN
+from core.gallery.library import Gallery, nft_listings
+from core.council.library import Council, nft_fundraising_period, nft_appraisal_period
+from core.bank.library import Bank
 from starkware.cairo.common.bool import TRUE
 
 @constructor
@@ -29,7 +29,7 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     ERC165.register_interface(IERC721_RECEIVER_ID);
     ERC20.initializer(name, symbol, decimals);
     ERC20._mint(recipient, initial_supply);
-    DAO.initializer(nft_fundraising_period, nft_appraisal_period);
+    Council.initializer(nft_fundraising_period, nft_appraisal_period);
     return ();
 }
 
@@ -93,7 +93,7 @@ func onERC721Received{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
 ) -> (selector: felt) {
     let (nft_appraisal_period_) = nft_appraisal_period.read();
     let (nft_fundraising_period_) = nft_fundraising_period.read();
-    return NFT.onReceived(
+    return Gallery.onReceived(
         from_, tokenId, data_len, data, nft_appraisal_period_, nft_fundraising_period_
     );
 }
@@ -107,7 +107,7 @@ func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_pt
     power_token_amount: Uint256,
 ) -> (success: felt) {
     let (nft_) = nft_listings.read(collection_address, token_id);
-    return TOKEN.appraise_nft(
+    return Bank.appraise_nft(
         from_,
         collection_address,
         token_id,
@@ -126,7 +126,7 @@ func verify_median_appraisal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     nft_member_appraisals: felt*,
 ) -> (success: felt) {
     let (nft_) = nft_listings.read(collection_address, token_id);
-    return TOKEN.verify_median_appraisal(
+    return Bank.verify_median_appraisal(
         index_of_median,
         collection_address,
         token_id,

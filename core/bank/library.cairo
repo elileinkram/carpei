@@ -55,7 +55,7 @@ func nft_appraised(collection_address: felt, from_: felt, token_id: Uint256) {
 func nft_median_appraisal_verified(collection_address: felt, token_id: Uint256) {
 }
 
-namespace TOKEN {
+namespace Bank {
     func _vote_count_has_changed{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         collection_address: felt,
         from_: felt,

@@ -30,7 +30,7 @@ func nft_listings(collection_address: felt, token_id: Uint256) -> (nft: NFT_) {
 func nft_registered(collection_address: felt, token_id: Uint256) {
 }
 
-namespace NFT {
+namespace Gallery {
     func onReceived{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         from_: felt,
         tokenId: Uint256,
