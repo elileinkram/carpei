@@ -10,7 +10,7 @@ from tokens.erc20.library import ERC20
 from tokens.erc721.IERC721 import IERC721
 from utils.constants.library import IERC721_RECEIVER_ID, IERC20_ID, IERC20Metadata_ID
 from core.gallery.library import NFT, nft_listings
-from core.senate.library import DAO, nft_fundraising_period, nft_appraisal_period
+from core.council.library import DAO, nft_fundraising_period, nft_appraisal_period
 from core.bank.library import TOKEN
 from starkware.cairo.common.bool import TRUE
 
