@@ -10,7 +10,6 @@ from starkware.starknet.common.syscalls import (
     get_contract_address,
     get_block_timestamp,
 )
-from starkware.cairo.common.bool import TRUE, FALSE
 from tokens.erc721.IERC721 import IERC721
 from starkware.cairo.common.uint256 import Uint256, uint256_check
 from starkware.cairo.common.math import assert_not_zero, assert_nn_le
@@ -39,7 +38,7 @@ namespace Gallery {
         nft_appraisal_period: felt,
         nft_fundraising_period: felt,
     ) -> (selector: felt) {
-        assert TRUE = data_len;
+        assert 1 = data_len;
         let nft_underwriting_period = data[0];
         assert_nn_le(nft_appraisal_period + nft_fundraising_period, nft_underwriting_period);
         let (collection_address) = get_caller_address();
@@ -77,7 +76,7 @@ namespace Gallery {
         let fundraising_post_expiry_date: felt = appraisal_post_expiry_date + nft_fundraising_period;
         let underwriting_post_expiry_date: felt = fundraising_post_expiry_date + nft_underwriting_period;
         let (nft_) = nft_listings.read(collection_address, token_id);
-        assert FALSE = nft_.from_;
+        assert 0 = nft_.from_;
         nft_listings.write(
             collection_address,
             token_id,
