@@ -1,1 +1,36 @@
 *.json
+node_modules
+.env
+coverage
+coverage.json
+typechain
+typechain-types
+
+# Hardhat files
+cache
+artifacts
+
+# zksync-specific hardhat files
+cache-zk
+artifacts-zk
+
+bin/
+build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+**/.secrets.env
+**.pem
+
+**.DS_Store
+
+**_compiled.json
