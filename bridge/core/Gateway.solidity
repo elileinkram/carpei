@@ -30,7 +30,6 @@ contract Gateway is IERC721Receiver, ERC165, ERC721 {
     }
 
     function depositFees(bytes32 nftHash) public payable returns (bool) {
-        require(nftHash != 0);
         NFT storage nft = nonFungibles[nftHash];
         require(nft.key == 0);
         uint256 previousServiceFee = nft.serviceFee;
