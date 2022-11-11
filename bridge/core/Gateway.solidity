@@ -1,0 +1,134 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.9;
+import "../utils/introspection/ERC165.sol";
+import "../token/ERC721/IERC721Receiver.sol";
+import "./starknet/IStarknetMessaging.sol";
+import "../token/ERC721/ERC721.sol";
+
+contract Gateway is IERC721Receiver, ERC165, ERC721 {
+    mapping(bytes32 => NFT) public nonFungibles;
+    mapping(address => uint256) public leftoverFees;
+    struct NFT {
+        uint256 key;
+        uint256 lockupExpiry;
+        uint256 serviceFee;
+    }
+
+    uint256 public nonce;
+
+    uint256 public immutable SELECTOR_STARK_INITIATE_APPRAISAL =
+        _selectorStarkNet("init_appraisal");
+
+    IStarknetMessaging public immutable STARKNET_CROSS_DOMAIN_MESSENGER;
+    uint256 public immutable L2_NFT_APPRAISAL_ADDR;
+
+    constructor(address starknetMessaging, uint256 nftAppraisal) {
+        require(starknetMessaging != address(0));
+        require(nftAppraisal != 0);
+        STARKNET_CROSS_DOMAIN_MESSENGER = IStarknetMessaging(starknetMessaging);
+        L2_NFT_APPRAISAL_ADDR = nftAppraisal;
+    }
+
+    function depositFees(bytes32 nftHash) public payable returns (bool) {
+        require(nftHash != 0);
+        NFT storage nft = nonFungibles[nftHash];
+        require(nft.key == 0);
+        uint256 previousServiceFee = nft.serviceFee;
+        nft.serviceFee += msg.value;
+        require(nft.serviceFee > previousServiceFee);
+        return true;
+    }
+
+    function withdrawFees(uint256 amount) public returns (bool) {
+        require(amount != 0);
+        require(amount <= leftoverFees[msg.sender]);
+        leftoverFees[msg.sender] -= amount;
+        msg.sender.transfer(amount);
+        return true;
+    }
+
+    function onERC721Received(
+        address,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external returns (bytes4) {
+        bytes32 nftHash = keccak256(abi.encode(msg.sender, tokenId));
+        NFT storage nft = nonFungibles[nftHash];
+        require(nft.key == 0);
+        nonce += 1;
+        _safeMint(from, nonce);
+        (
+            uint256 lockupPeriod,
+            uint256 postageFee,
+            uint256 appraisalFee,
+            address leftoverFeeRecipient
+        ) = abi.decode(data, (uint256, uint256, uint256, address));
+        require(lockupPeriod != 0);
+        require(postageFee != 0);
+        require(leftoverFeeRecipient != address(0));
+        uint256 totalCost = postageFee + appraisalFee;
+        require(totalCost > postageFee);
+        uint256 serviceFee = nft.serviceFee;
+        require(serviceFee >= totalCost);
+        uint256 leftover = serviceFee - totalCost;
+        nft.serviceFee = 0;
+        if (leftover != 0) leftoverFees[leftoverFeeRecipient] += leftover;
+        uint256 lockupExpiry = block.timestamp + lockupPeriod + 1;
+        nft.key = nonce;
+        nft.lockupExpiry = lockupExpiry;
+        uint256[] memory payload = new uint256[](4);
+        payload[0] = uint256(uint160(msg.sender));
+        payload[1] = uint256(uint160(from));
+        payload[2] = tokenId;
+        payload[3] = lockupExpiry;
+        payload[4] = appraisalFee;
+        STARKNET_CROSS_DOMAIN_MESSENGER.sendMessageToL2{value: postageFee}(
+            L2_NFT_APPRAISAL_ADDR,
+            SELECTOR_STARK_INITIATE_APPRAISAL,
+            payload
+        );
+        return this.onERC721Received.selector;
+    }
+
+    function redeemNFT(
+        address collection,
+        uint256 tokenId,
+        uint256 key
+    ) public returns (bool) {
+        bytes32 nftHash = keccak256(abi.encode(collection, tokenId));
+        NFT storage nft = nonFungibles[nftHash];
+        require(nft.lockupExpiry < block.timestamp);
+        require(key != 0 && key == nft.key);
+        require(ownerOf(key) == msg.sender);
+        delete nft.key;
+        this._burn(key);
+        IERC721(collection).safeTransferFrom(
+            address(this),
+            msg.sender,
+            tokenId
+        );
+        return true;
+    }
+
+    function _selectorStarkNet(string memory fn)
+        internal
+        pure
+        returns (uint256)
+    {
+        bytes32 digest = keccak256(abi.encodePacked(fn));
+        return uint256(digest) % 2**250;
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        return
+            interfaceId == type(IERC721Receiver).interfaceId ||
+            super.supportsInterface(interfaceId);
+    }
+}
