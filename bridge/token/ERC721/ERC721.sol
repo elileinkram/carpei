@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 
 import "./IERC721.sol";
 import "./IERC721Receiver.sol";
-import "../../utils/Context.sol";
 import "../../utils/introspection/ERC165.sol";
 
 /**
@@ -13,7 +12,7 @@ import "../../utils/introspection/ERC165.sol";
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
-contract ERC721 is Context, ERC165, IERC721 {
+contract ERC721 is ERC165, IERC721 {
     // Mapping from token ID to owner address
     mapping(uint256 => address) private _owners;
 
@@ -81,7 +80,7 @@ contract ERC721 is Context, ERC165, IERC721 {
         require(to != owner, "ERC721: approval to current owner");
 
         require(
-            _msgSender() == owner || isApprovedForAll(owner, _msgSender()),
+            msg.sender == owner || isApprovedForAll(owner, msg.sender),
             "ERC721: approve caller is not token owner or approved for all"
         );
 
@@ -111,7 +110,7 @@ contract ERC721 is Context, ERC165, IERC721 {
         virtual
         override
     {
-        _setApprovalForAll(_msgSender(), operator, approved);
+        _setApprovalForAll(msg.sender, operator, approved);
     }
 
     /**
@@ -137,7 +136,7 @@ contract ERC721 is Context, ERC165, IERC721 {
     ) public virtual override {
         //solhint-disable-next-line max-line-length
         require(
-            _isApprovedOrOwner(_msgSender(), tokenId),
+            _isApprovedOrOwner(msg.sender, tokenId),
             "ERC721: caller is not token owner or approved"
         );
 
@@ -165,7 +164,7 @@ contract ERC721 is Context, ERC165, IERC721 {
         bytes memory data
     ) public virtual override {
         require(
-            _isApprovedOrOwner(_msgSender(), tokenId),
+            _isApprovedOrOwner(msg.sender, tokenId),
             "ERC721: caller is not token owner or approved"
         );
         _safeTransfer(from, to, tokenId, data);
@@ -434,7 +433,7 @@ contract ERC721 is Context, ERC165, IERC721 {
         if (to.code.length > 0) {
             try
                 IERC721Receiver(to).onERC721Received(
-                    _msgSender(),
+                    msg.sender,
                     from,
                     tokenId,
                     data

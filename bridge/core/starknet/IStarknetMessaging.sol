@@ -33,12 +33,12 @@ interface IStarknetMessaging is IStarknetMessagingEvents {
       Note: This function may only be called for a message that is currently pending and the caller
       must be the sender of the that message.
     */
-    function startL1ToL2MessageCancellation(
-        uint256 toAddress,
-        uint256 selector,
-        uint256[] calldata payload,
-        uint256 nonce
-    ) external returns (bytes32);
+    // function startL1ToL2MessageCancellation(
+    //     uint256 toAddress,
+    //     uint256 selector,
+    //     uint256[] calldata payload,
+    //     uint256 nonce
+    // ) external returns (bytes32);
 
     /**
       Cancels an L1 to L2 message, this function should be called messageCancellationDelay() seconds
@@ -46,10 +46,10 @@ interface IStarknetMessaging is IStarknetMessagingEvents {
 
       Note that the message fee is not refunded.
     */
-    function cancelL1ToL2Message(
-        uint256 toAddress,
-        uint256 selector,
-        uint256[] calldata payload,
-        uint256 nonce
-    ) external returns (bytes32);
+    // function cancelL1ToL2Message(
+    //     uint256 toAddress,
+    //     uint256 selector,
+    //     uint256[] calldata payload,
+    //     uint256 nonce
+    // ) external returns (bytes32);
 }
