@@ -10,7 +10,7 @@ from tokens.erc20.library import ERC20
 from tokens.erc721.IERC721 import IERC721
 from utils.constants.library import IERC721_RECEIVER_ID, IERC20_ID, IERC20Metadata_ID
 from core.gallery.library import Gallery, nft_listings
-from core.council.library import Council, nft_fundraising_period, nft_appraisal_period
+from core.council.library import Council, nft_appraisal_period
 from core.bank.library import Bank
 from starkware.cairo.common.bool import TRUE
 
@@ -21,7 +21,6 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     decimals: felt,
     initial_supply: Uint256,
     recipient: felt,
-    nft_fundraising_period: felt,
     nft_appraisal_period: felt,
 ) {
     ERC165.register_interface(IERC20_ID);
@@ -29,7 +28,7 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     ERC165.register_interface(IERC721_RECEIVER_ID);
     ERC20.initializer(name, symbol, decimals);
     ERC20._mint(recipient, initial_supply);
-    Council.initializer(nft_fundraising_period, nft_appraisal_period);
+    Council.initializer(nft_appraisal_period);
     return ();
 }
 
@@ -92,10 +91,7 @@ func onERC721Received{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
     TRUE, from_: felt, tokenId: Uint256, data_len: felt, data: felt*
 ) -> (selector: felt) {
     let (nft_appraisal_period_) = nft_appraisal_period.read();
-    let (nft_fundraising_period_) = nft_fundraising_period.read();
-    return Gallery.onReceived(
-        from_, tokenId, data_len, data, nft_appraisal_period_, nft_fundraising_period_
-    );
+    return Gallery.onReceived(from_, tokenId, data_len, data, nft_appraisal_period_);
 }
 
 @external

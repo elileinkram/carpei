@@ -8,20 +8,14 @@ from starkware.cairo.common.math import assert_nn_le
 from starkware.cairo.common.uint256 import Uint256
 
 @storage_var
-func nft_fundraising_period() -> (res: felt) {
-}
-
-@storage_var
 func nft_appraisal_period() -> (res: felt) {
 }
 
 namespace Council {
     func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        nft_fundraising_period_: felt, nft_appraisal_period_: felt
+        nft_appraisal_period_: felt
     ) {
-        assert_nn_le(1, nft_fundraising_period_);
         assert_nn_le(1, nft_appraisal_period_);
-        nft_fundraising_period.write(nft_fundraising_period_);
         nft_appraisal_period.write(nft_appraisal_period_);
         return ();
     }

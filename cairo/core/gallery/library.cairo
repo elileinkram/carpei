@@ -31,24 +31,14 @@ func nft_registered(collection_address: felt, token_id: Uint256) {
 
 namespace Gallery {
     func onReceived{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        from_: felt,
-        tokenId: Uint256,
-        data_len: felt,
-        data: felt*,
-        nft_appraisal_period: felt,
-        nft_fundraising_period: felt,
+        from_: felt, tokenId: Uint256, data_len: felt, data: felt*, nft_appraisal_period: felt
     ) -> (selector: felt) {
         assert 1 = data_len;
         let nft_underwriting_period = data[0];
-        assert_nn_le(nft_appraisal_period + nft_fundraising_period, nft_underwriting_period);
+        assert_nn_le(nft_appraisal_period, nft_underwriting_period);
         let (collection_address) = get_caller_address();
         return _onReceived(
-            nft_appraisal_period,
-            nft_fundraising_period,
-            nft_underwriting_period,
-            collection_address,
-            from_,
-            tokenId,
+            nft_appraisal_period, nft_underwriting_period, collection_address, from_, tokenId
         );
     }
 
@@ -65,7 +55,6 @@ namespace Gallery {
 
     func _register_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         nft_appraisal_period: felt,
-        nft_fundraising_period: felt,
         nft_underwriting_period: felt,
         collection_address: felt,
         from_: felt,
@@ -73,8 +62,7 @@ namespace Gallery {
     ) {
         let (block_timestamp) = get_block_timestamp();
         let appraisal_post_expiry_date: felt = block_timestamp + nft_appraisal_period + 1;
-        let fundraising_post_expiry_date: felt = appraisal_post_expiry_date + nft_fundraising_period;
-        let underwriting_post_expiry_date: felt = fundraising_post_expiry_date + nft_underwriting_period;
+        let underwriting_post_expiry_date: felt = appraisal_post_expiry_date + nft_underwriting_period;
         let (nft_) = nft_listings.read(collection_address, token_id);
         assert 0 = nft_.from_;
         nft_listings.write(
@@ -87,7 +75,6 @@ namespace Gallery {
 
     func _onReceived{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         nft_appraisal_period: felt,
-        nft_fundraising_period: felt,
         nft_underwriting_period: felt,
         collection_address: felt,
         from_: felt,
@@ -95,12 +82,7 @@ namespace Gallery {
     ) -> (selector: felt) {
         _transfer_nft(collection_address, from_, token_id);
         _register_nft(
-            nft_appraisal_period,
-            nft_fundraising_period,
-            nft_underwriting_period,
-            collection_address,
-            from_,
-            token_id,
+            nft_appraisal_period, nft_underwriting_period, collection_address, from_, token_id
         );
         nft_registered.emit(collection_address, token_id);
         return (selector=IERC721_RECEIVER_ID);
