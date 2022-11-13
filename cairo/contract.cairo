@@ -8,11 +8,19 @@ from starkware.cairo.common.uint256 import Uint256
 from introspection.erc165.library import ERC165
 from tokens.erc20.library import ERC20
 from tokens.erc721.IERC721 import IERC721
-from utils.constants.library import IERC721_RECEIVER_ID, IERC20_ID, IERC20Metadata_ID
+from utils.constants.library import (
+    IERC721_RECEIVER_ID,
+    IERC20_ID,
+    IERC20Metadata_ID,
+    L1_CONTRACT_ADDRESS,
+)
 from core.gallery.library import Gallery, nft_listings
-from core.council.library import Council, nft_appraisal_period
-from core.bank.library import Bank
+from core.council.library import Council, nft_appraisal_period, nft_appraisal_fee
+from core.bank.library import Bank, user_fees, manager_of
 from starkware.cairo.common.bool import TRUE
+from starkware.starknet.common.syscalls import get_caller_address
+from starkware.starknet.common.messages import send_message_to_l1
+from starkware.cairo.common.math import assert_lt, assert_le, assert_not_zero
 
 @constructor
 func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -22,13 +30,14 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     initial_supply: Uint256,
     recipient: felt,
     nft_appraisal_period: felt,
+    nft_appraisal_fee: felt,
 ) {
     ERC165.register_interface(IERC20_ID);
     ERC165.register_interface(IERC20Metadata_ID);
     ERC165.register_interface(IERC721_RECEIVER_ID);
     ERC20.initializer(name, symbol, decimals);
     ERC20._mint(recipient, initial_supply);
-    Council.initializer(nft_appraisal_period);
+    Council.initializer(nft_appraisal_period, nft_appraisal_fee);
     return ();
 }
 
@@ -90,8 +99,15 @@ func allowance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func onERC721Received{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     TRUE, from_: felt, tokenId: Uint256, data_len: felt, data: felt*
 ) -> (selector: felt) {
+    let (caller) = get_caller_address();
+    let is_approved = Bank.is_approved_or_owner(caller, from_);
+    assert_not_zero(is_approved * caller);
+    let (nft_appraisal_fee_) = nft_appraisal_fee.read();
+    let (available_fees) = user_fees.read(from_);
+    assert_le(nft_appraisal_fee, available_fees);
+    user_fees.write(from_, available_fees - nft_appraisal_fee);
     let (nft_appraisal_period_) = nft_appraisal_period.read();
-    return Gallery.onReceived(from_, tokenId, data_len, data, nft_appraisal_period_);
+    return Gallery.onReceivedFromL2(caller, from_, tokenId, data_len, data, nft_appraisal_period_);
 }
 
 @external
@@ -166,4 +182,62 @@ func decreaseAllowance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     spender: felt, subtracted_value: Uint256
 ) -> (success: felt) {
     return ERC20.decrease_allowance(spender, subtracted_value);
+}
+
+@l1_handler
+func onERC721ReceivedFromL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    from_address: felt,
+    collection_address: felt,
+    from_: felt,
+    token_id_low_bits: felt,
+    token_id_high_bits: felt,
+    appraisal_fee: felt,
+    nft_debt_period: felt,
+    nft_post_expiry: felt,
+) {
+    assert L1_CONTRACT_ADDRESS = from_address;
+
+    let (nft_appraisal_period_) = nft_appraisal_period.read();
+
+    let (nft_appraisal_fee_) = nft_appraisal_fee.read();
+
+    Gallery.onReceivedFromL1(
+        collection_address,
+        from_,
+        Uint256(token_id_low_bits, token_id_high_bits),
+        nft_appraisal_period_,
+        appraisal_fee,
+        nft_appraisal_fee_,
+        nft_debt_period,
+        nft_post_expiry,
+    );
+
+    return ();
+}
+
+@l1_handler
+func depositFeesL2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    from_address: felt, from_: felt, fee_amount: felt
+) {
+    assert L1_CONTRACT_ADDRESS = from_address;
+    return Bank.depositFeesL2(from_, fee_amount);
+}
+
+@external
+func depositFeesL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    from_: felt, amount: felt
+) -> (success: felt) {
+    let (caller) = get_caller_address();
+    let is_approved = Bank.is_approved_or_owner(caller, from_);
+    assert_not_zero(is_approved);
+    return Bank.depositFeesL1(from_, amount);
+}
+
+@external
+func approveFeeManager{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    manager: felt
+) -> (success: felt) {
+    let (from_) = get_caller_address();
+    manager_of.write(from_, manager);
+    return (success=TRUE);
 }

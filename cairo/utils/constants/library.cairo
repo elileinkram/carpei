@@ -28,4 +28,6 @@ const IERC721_RECEIVER_ID = 0x150b7a02;
 // Roles
 //
 
-const DEFAULT_ADMIN_ROLE = 0;
+const L1_CONTRACT_ADDRESS = 0x1;
+
+const DEPOSIT_FEES_L1_CODE = 0;

@@ -15,6 +15,15 @@ from starkware.cairo.common.math import (
     assert_nn_le,
     assert_lt,
 )
+from utils.constants.library import L1_CONTRACT_ADDRESS, DEPOSIT_FEES_L1_CODE
+
+@storage_var
+func user_fees(user: felt) -> (res: felt) {
+}
+
+@storage_var
+func manager_of(user: felt) -> (res: felt) {
+}
 
 @storage_var
 func power_bank_balances(owner: felt) -> (amount: Uint256) {
@@ -56,6 +65,52 @@ func nft_median_appraisal_verified(collection_address: felt, token_id: Uint256) 
 }
 
 namespace Bank {
+    func is_approved_or_owner{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        caller: felt, owner: felt
+    ) -> felt {
+        let (manager) = manager_of.read(owner);
+        if (manager == caller) {
+            return TRUE;
+        }
+        if (owner == caller) {
+            return TRUE;
+        }
+        return FALSE;
+    }
+
+    func depositFeesL2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        from_: felt, amount: felt
+    ) {
+        let (deposited) = user_fees.read(from_);
+
+        let increased = deposited + amount;
+
+        assert_lt(deposited, increased);
+
+        user_fees.write(from_, increased);
+
+        return ();
+    }
+
+    func depositFeesL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        from_: felt, amount: felt
+    ) -> (success: felt) {
+        assert_lt(0, amount);
+
+        let (deposited) = user_fees.read(from_);
+
+        assert_le(amount, deposited);
+
+        user_fees.write(from_, deposited - amount);
+
+        let (payload: felt*) = alloc();
+        assert payload[0] = from_;
+        assert payload[1] = amount;
+        assert payload[2] = DEPOSIT_FEES_L1_CODE;
+
+        send_message_to_l1(L1_CONTRACT_ADDRESS, 3, payload);
+        return (success=TRUE);
+    }
     func _vote_count_has_changed{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         collection_address: felt,
         from_: felt,
