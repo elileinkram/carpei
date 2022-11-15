@@ -5,9 +5,9 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256
-from introspection.erc165.library import ERC165
-from token.erc20.library import ERC20
-from token.erc721.IERC721 import IERC721
+from introspection.ERC165.library import ERC165
+from token.ERC20.library import ERC20
+from token.ERC721.IERC721 import IERC721
 from utils.constants.library import (
     IERC20_ID,
     IERC20Metadata_ID,

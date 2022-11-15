@@ -7,8 +7,8 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.coxmmon.uint256 import Uint256
 
 from access.ownable.library import Ownable
-from introspection.erc165.library import ERC165
-from token.erc721.library import ERC721
+from introspection.ERC165.library import ERC165
+from token.ERC721.library import ERC721
 from utils.constants.library import IERC721_ID
 
 //

@@ -8,9 +8,9 @@ from starkware.starknet.common.syscalls import get_caller_address
 from starkware.cairo.common.math import assert_not_zero, assert_not_equal
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.uint256 import Uint256, uint256_check
-from introspection.erc165.IERC165 import IERC165
+from introspection.ERC165.IERC165 import IERC165
 from security.safemath.library import SafeUint256
-from token.erc721.IERC721Receiver import IERC721Receiver
+from token.ERC721.IERC721Receiver import IERC721Receiver
 from utils.constants.library import IERC721_RECEIVER_ID, IACCOUNT_ID
 
 //

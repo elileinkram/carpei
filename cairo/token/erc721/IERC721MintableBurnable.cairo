@@ -6,7 +6,7 @@
 from starkware.cairo.common.uint256 import Uint256
 
 @contract_interface
-namespace IERC721 {
+namespace IERC721MintableBurnable {
     func balanceOf(owner: felt) -> (balance: Uint256) {
     }
 

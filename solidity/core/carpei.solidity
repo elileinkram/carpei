@@ -5,6 +5,7 @@ import "../token/ERC721/IERC721Receiver.sol";
 import "../token/ERC721/ERC721.sol";
 import "../token/ERC721/IERC721.sol";
 import "./starknet/IStarknetMessaging.sol";
+import "../token/ERC20/presets/ERC20MintableBurnable.sol";
 
 contract Carpei is IERC721Receiver, ERC165, ERC721 {
     mapping(bytes32 => NFT) public nonFungibles;
@@ -16,6 +17,8 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         uint256 appraisalFee;
         bool isAppraised;
     }
+
+    ERC20MintableBurnable private immutable ERC20_MESSENGER;
 
     uint256 public nonce;
 
@@ -29,10 +32,16 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
     uint256 public immutable L2_NFT_APPRAISAL_ADDR;
     uint256 constant DEPOSIT_FEES_L1_CODE = 0;
 
-    constructor(address starknetMessaging, uint256 nftAppraisal) {
+    constructor(
+        address starknetMessaging,
+        uint256 nftAppraisal,
+        string memory name,
+        string memory symbol
+    ) {
         require(starknetMessaging != address(0));
         require(nftAppraisal != 0);
         STARKNET_CROSS_DOMAIN_MESSENGER = IStarknetMessaging(starknetMessaging);
+        ERC20_MESSENGER = new ERC20MintableBurnable(name, symbol);
         L2_NFT_APPRAISAL_ADDR = nftAppraisal;
     }
 
@@ -141,7 +150,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
     }
 
     function get_low_n_bits(uint256 x, uint256 n)
-        external
+        internal
         pure
         returns (uint256)
     {
@@ -150,7 +159,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
     }
 
     function get_high_n_bits(uint256 x, uint256 n)
-        external
+        internal
         pure
         returns (uint256)
     {
@@ -169,7 +178,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         require(owner != address(0));
         require(owner == msg.sender);
         delete nft.key;
-        this._burn(key);
+        super._burn(key);
         if (!nft.isAppraised) {
             userFees[owner] += nft.appraisalFee;
             nft.appraisalFee = 0;
@@ -201,12 +210,11 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         public
         view
         virtual
-        override
+        override(ERC165, ERC721)
         returns (bool)
     {
         return
             interfaceId == type(IERC721Receiver).interfaceId ||
-            interfaceId == type(IERC721).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 }

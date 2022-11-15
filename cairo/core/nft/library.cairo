@@ -6,7 +6,7 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from utils.constants.library import IERC721_RECEIVER_ID
 from starkware.starknet.common.syscalls import get_contract_address, get_block_timestamp
-from token.erc721.IERC721MintableBurnable import IERC721MintableBurnable
+from token.ERC721.IERC721MintableBurnable import IERC721MintableBurnable
 from starkware.cairo.common.uint256 import Uint256, uint256_check
 from starkware.cairo.common.math import assert_not_zero, assert_le, split_felt
 from starkware.cairo.common.bool import TRUE, FALSE
@@ -42,7 +42,6 @@ namespace NFT {
         data_len: felt,
         data: felt*,
         nft_appraisal_period: felt,
-        nft_l1_extra_lockup_period: felt,
     ) -> (selector: felt) {
         assert 1 = data_len;
         let nft_debt_period = data[0];
@@ -92,7 +91,7 @@ namespace NFT {
     ) {
         let debt_post_expiry_date: felt = appraisal_post_expiry_date + nft_debt_period;
         let (nft_) = nft_listings.read(collection_address, token_id, l1_native);
-        assert 0 = nft_.from_;
+        assert FALSE = nft_.from_;
         nft_listings.write(
             collection_address,
             token_id,
