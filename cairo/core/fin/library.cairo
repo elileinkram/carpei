@@ -26,11 +26,11 @@ func manager_of(user: felt) -> (res: felt) {
 }
 
 @storage_var
-func power_bank_balances(owner: felt) -> (amount: Uint256) {
+func power_token_balances(owner: felt) -> (amount: Uint256) {
 }
 
 @storage_var
-func power_bank_allowances(owner: felt, spender: felt) -> (amount: Uint256) {
+func power_token_allowances(owner: felt, spender: felt) -> (amount: Uint256) {
 }
 
 struct Appraisal {
@@ -64,7 +64,7 @@ func nft_appraised(collection_address: felt, from_: felt, token_id: Uint256) {
 func nft_median_appraisal_verified(collection_address: felt, token_id: Uint256) {
 }
 
-namespace Bank {
+namespace FIN {
     func is_approved_or_owner{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         caller: felt, owner: felt
     ) -> felt {

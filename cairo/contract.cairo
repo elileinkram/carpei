@@ -7,20 +7,23 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256
 from introspection.erc165.library import ERC165
 from token.erc20.library import ERC20
-from token.erc721.library import ERC721
 from token.erc721.IERC721 import IERC721
 from utils.constants.library import (
-    IERC721_ID,
-    IERC721_RECEIVER_ID,
     IERC20_ID,
     IERC20Metadata_ID,
+    IERC721_RECEIVER_ID,
     L1_CONTRACT_ADDRESS,
 )
-from core.gallery.library import Gallery, nft_listings
-from core.council.library import Council, nft_appraisal_period, nft_appraisal_fee
-from core.bank.library import Bank, user_fees, manager_of
+from core.nft.library import NFT, nft_listings, nft_key_contract_address
+from core.dao.library import (
+    DAO,
+    nft_appraisal_period,
+    nft_appraisal_fee,
+    nft_l1_extra_lockup_period,
+)
+from core.fin.library import FIN, user_fees, manager_of
 from starkware.cairo.common.bool import TRUE
-from starkware.starknet.common.syscalls import get_caller_address
+from starkware.starknet.common.syscalls import get_caller_address, deploy, get_contract_address
 from starkware.starknet.common.messages import send_message_to_l1
 from starkware.cairo.common.math import assert_lt, assert_le, assert_not_zero
 
@@ -32,15 +35,25 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     initial_supply: Uint256,
     recipient: felt,
     nft_appraisal_period: felt,
+    nft_l1_extra_lockup_period: felt,
     nft_appraisal_fee: felt,
+    class_hash: felt,
 ) {
     ERC165.register_interface(IERC20_ID);
     ERC165.register_interface(IERC20Metadata_ID);
     ERC165.register_interface(IERC721_RECEIVER_ID);
-    ERC165.register_interface(IERC721_ID);
     ERC20.initializer(name, symbol, decimals);
     ERC20._mint(recipient, initial_supply);
-    Council.initializer(nft_appraisal_period, nft_appraisal_fee);
+    DAO.initializer(nft_appraisal_period, nft_l1_extra_lockup_period, nft_appraisal_fee);
+    let (owner_contract_address) = get_contract_address();
+    let (contract_address) = deploy(
+        class_hash,
+        FALSE,
+        constructor_calldata_size=1,
+        constructor_calldata=cast(new (owner_contract_address,), felt*),
+        deploy_from_zero=FALSE,
+    );
+    nft_key_contract_address.write(contract_address);
     return ();
 }
 
@@ -103,14 +116,13 @@ func onERC721Received{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
     TRUE, from_: felt, tokenId: Uint256, data_len: felt, data: felt*
 ) -> (selector: felt) {
     let (caller) = get_caller_address();
-    let is_approved = Bank.is_approved_or_owner(caller, from_);
+    let is_approved = FIN.is_approved_or_owner(caller, from_);
     assert_not_zero(is_approved * caller);
     let (nft_appraisal_fee_) = nft_appraisal_fee.read();
     let (available_fees) = user_fees.read(from_);
     assert_le(nft_appraisal_fee, available_fees);
     user_fees.write(from_, available_fees - nft_appraisal_fee);
-    let (nft_appraisal_period_) = nft_appraisal_period.read();
-    return Gallery.onReceivedFromL2(caller, from_, tokenId, data_len, data, nft_appraisal_period_);
+    return NFT.onReceivedFromL2(caller, from_, tokenId, data_len, data, nft_appraisal_period_);
 }
 
 @external
@@ -122,7 +134,7 @@ func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_pt
     power_token_amount: Uint256,
 ) -> (success: felt) {
     let (nft_) = nft_listings.read(collection_address, token_id);
-    return Bank.appraise_nft(
+    return FIN.appraise_nft(
         from_,
         collection_address,
         token_id,
@@ -141,7 +153,7 @@ func verify_median_appraisal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     nft_member_appraisals: felt*,
 ) -> (success: felt) {
     let (nft_) = nft_listings.read(collection_address, token_id);
-    return Bank.verify_median_appraisal(
+    return FIN.verify_median_appraisal(
         index_of_median,
         collection_address,
         token_id,
@@ -204,11 +216,14 @@ func onERC721ReceivedFromL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, rang
 
     let (nft_appraisal_fee_) = nft_appraisal_fee.read();
 
-    Gallery.onReceivedFromL1(
+    let (nft_l1_extra_lockup_period_) = nft_l1_extra_lockup_period.read();
+
+    NFT.onReceivedFromL1(
         collection_address,
         from_,
         Uint256(token_id_low_bits, token_id_high_bits),
         nft_appraisal_period_,
+        nft_l1_extra_lockup_period_,
         appraisal_fee,
         nft_appraisal_fee_,
         nft_debt_period,
@@ -223,7 +238,7 @@ func depositFeesL2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     from_address: felt, from_: felt, fee_amount: felt
 ) {
     assert L1_CONTRACT_ADDRESS = from_address;
-    return Bank.depositFeesL2(from_, fee_amount);
+    return FIN.depositFeesL2(from_, fee_amount);
 }
 
 @external
@@ -231,9 +246,9 @@ func depositFeesL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     from_: felt, amount: felt
 ) -> (success: felt) {
     let (caller) = get_caller_address();
-    let is_approved = Bank.is_approved_or_owner(caller, from_);
+    let is_approved = FIN.is_approved_or_owner(caller, from_);
     assert_not_zero(is_approved);
-    return Bank.depositFeesL1(from_, amount);
+    return FIN.depositFeesL1(from_, amount);
 }
 
 @external
@@ -243,69 +258,4 @@ func approveFeeManager{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     let (from_) = get_caller_address();
     manager_of.write(from_, manager);
     return (success=TRUE);
-}
-
-@view
-func balanceOf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(owner: felt) -> (
-    balance: Uint256
-) {
-    return ERC721.balance_of(owner);
-}
-
-@view
-func ownerOf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(tokenId: Uint256) -> (
-    owner: felt
-) {
-    return ERC721.owner_of(tokenId);
-}
-
-@view
-func getApproved{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    tokenId: Uint256
-) -> (approved: felt) {
-    return ERC721.get_approved(tokenId);
-}
-
-@view
-func isApprovedForAll{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    owner: felt, operator: felt
-) -> (isApproved: felt) {
-    let (isApproved: felt) = ERC721.is_approved_for_all(owner, operator);
-    return (isApproved=isApproved);
-}
-
-//
-// Externals
-//
-
-@external
-func approve{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
-    to: felt, tokenId: Uint256
-) {
-    ERC721.approve(to, tokenId);
-    return ();
-}
-
-@external
-func setApprovalForAll{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    operator: felt, approved: felt
-) {
-    ERC721.set_approval_for_all(operator, approved);
-    return ();
-}
-
-@external
-func transferFrom{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
-    from_: felt, to: felt, tokenId: Uint256
-) {
-    ERC721.transfer_from(from_, to, tokenId);
-    return ();
-}
-
-@external
-func safeTransferFrom{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
-    from_: felt, to: felt, tokenId: Uint256, data_len: felt, data: felt*
-) {
-    ERC721.safe_transfer_from(from_, to, tokenId, data_len, data);
-    return ();
 }
