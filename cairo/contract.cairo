@@ -14,14 +14,14 @@ from utils.constants.library import (
     IERC721_RECEIVER_ID,
     L1_CONTRACT_ADDRESS,
 )
-from core.nft.library import NFT, nft_listings, nft_key_contract_address
-from core.dao.library import (
+from core.NFT.library import NFT, nft_listings, nft_key_contract_address
+from core.DAO.library import (
     DAO,
     nft_appraisal_period,
     nft_appraisal_fee,
     nft_l1_extra_lockup_period,
 )
-from core.fin.library import FIN, user_fees, manager_of
+from core.FIN.library import FIN, user_fees, manager_of
 from starkware.cairo.common.bool import TRUE
 from starkware.starknet.common.syscalls import get_caller_address, deploy, get_contract_address
 from starkware.starknet.common.messages import send_message_to_l1
