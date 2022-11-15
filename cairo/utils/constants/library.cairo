@@ -20,9 +20,11 @@ const IERC20Metadata_ID = 0xa219a025;
 // ERC165
 const IERC165_ID = 0x01ffc9a7;
 const INVALID_ID = 0xffffffff;
+const IACCOUNT_ID = 0xa66bd575;
 
 // ERC721
 const IERC721_RECEIVER_ID = 0x150b7a02;
+const IERC721_ID = 0x80ac58cd;
 
 //
 // Roles

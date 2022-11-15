@@ -2,8 +2,9 @@
 pragma solidity ^0.8.9;
 import "../utils/introspection/ERC165.sol";
 import "../token/ERC721/IERC721Receiver.sol";
-import "./starknet/IStarknetMessaging.sol";
 import "../token/ERC721/ERC721.sol";
+import "../token/ERC721/IERC721.sol";
+import "./starknet/IStarknetMessaging.sol";
 
 contract Carpei is IERC721Receiver, ERC165, ERC721 {
     mapping(bytes32 => NFT) public nonFungibles;
@@ -69,6 +70,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         payable
         returns (bool)
     {
+        require(from == msg.sender || managerOf[from] == msg.sender);
         _decreaseUserFees(from, amount);
         uint256[] memory payload = new uint256[](2);
         payload[0] = _uint256Addr(from);
@@ -88,7 +90,6 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
     }
 
     function _decreaseUserFees(address from, uint256 amount) private {
-        require(from == msg.sender || managerOf[from] == msg.sender);
         require(amount != 0);
         require(amount <= userFees[from]);
         userFees[from] -= amount;
@@ -163,12 +164,14 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         bytes32 nftHash = keccak256(abi.encode(collection, tokenId));
         NFT storage nft = nonFungibles[nftHash];
         require(nft.postExpiry <= block.timestamp);
-        address owner = ownerOf(nft.key);
-        require(owner != address(0) && owner == msg.sender);
+        uint256 key = nft.key;
+        address owner = ownerOf(key);
+        require(owner != address(0));
+        require(owner == msg.sender);
         delete nft.key;
         this._burn(key);
         if (!nft.isAppraised) {
-            userFees[msg.sender] += nft.appraisalFee;
+            userFees[owner] += nft.appraisalFee;
             nft.appraisalFee = 0;
         } else {
             nft.isAppraised = false;
@@ -203,6 +206,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
     {
         return
             interfaceId == type(IERC721Receiver).interfaceId ||
+            interfaceId == type(IERC721).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 }

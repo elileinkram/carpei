@@ -6,7 +6,7 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from utils.constants.library import IERC721_RECEIVER_ID
 from starkware.starknet.common.syscalls import get_contract_address, get_block_timestamp
-from tokens.erc721.IERC721 import IERC721
+from token.erc721.IERC721 import IERC721
 from starkware.cairo.common.uint256 import Uint256, uint256_check
 from starkware.cairo.common.math import assert_not_zero, assert_le
 from starkware.cairo.common.bool import TRUE, FALSE

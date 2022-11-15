@@ -6,9 +6,11 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256
 from introspection.erc165.library import ERC165
-from tokens.erc20.library import ERC20
-from tokens.erc721.IERC721 import IERC721
+from token.erc20.library import ERC20
+from token.erc721.library import ERC721
+from token.erc721.IERC721 import IERC721
 from utils.constants.library import (
+    IERC721_ID,
     IERC721_RECEIVER_ID,
     IERC20_ID,
     IERC20Metadata_ID,
@@ -35,6 +37,7 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     ERC165.register_interface(IERC20_ID);
     ERC165.register_interface(IERC20Metadata_ID);
     ERC165.register_interface(IERC721_RECEIVER_ID);
+    ERC165.register_interface(IERC721_ID);
     ERC20.initializer(name, symbol, decimals);
     ERC20._mint(recipient, initial_supply);
     Council.initializer(nft_appraisal_period, nft_appraisal_fee);
@@ -240,4 +243,69 @@ func approveFeeManager{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     let (from_) = get_caller_address();
     manager_of.write(from_, manager);
     return (success=TRUE);
+}
+
+@view
+func balanceOf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(owner: felt) -> (
+    balance: Uint256
+) {
+    return ERC721.balance_of(owner);
+}
+
+@view
+func ownerOf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(tokenId: Uint256) -> (
+    owner: felt
+) {
+    return ERC721.owner_of(tokenId);
+}
+
+@view
+func getApproved{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    tokenId: Uint256
+) -> (approved: felt) {
+    return ERC721.get_approved(tokenId);
+}
+
+@view
+func isApprovedForAll{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    owner: felt, operator: felt
+) -> (isApproved: felt) {
+    let (isApproved: felt) = ERC721.is_approved_for_all(owner, operator);
+    return (isApproved=isApproved);
+}
+
+//
+// Externals
+//
+
+@external
+func approve{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+    to: felt, tokenId: Uint256
+) {
+    ERC721.approve(to, tokenId);
+    return ();
+}
+
+@external
+func setApprovalForAll{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    operator: felt, approved: felt
+) {
+    ERC721.set_approval_for_all(operator, approved);
+    return ();
+}
+
+@external
+func transferFrom{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+    from_: felt, to: felt, tokenId: Uint256
+) {
+    ERC721.transfer_from(from_, to, tokenId);
+    return ();
+}
+
+@external
+func safeTransferFrom{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+    from_: felt, to: felt, tokenId: Uint256, data_len: felt, data: felt*
+) {
+    ERC721.safe_transfer_from(from_, to, tokenId, data_len, data);
+    return ();
 }
