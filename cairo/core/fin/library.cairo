@@ -16,6 +16,7 @@ from starkware.cairo.common.math import (
     assert_lt,
 )
 from utils.constants.library import L1_CONTRACT_ADDRESS, DEPOSIT_FEES_L1_CODE
+from starkware.starknet.common.messages import send_message_to_l1
 
 @storage_var
 func user_fees(user: felt) -> (res: felt) {
