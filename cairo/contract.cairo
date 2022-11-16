@@ -48,7 +48,7 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     let (owner_contract_address) = get_contract_address();
     let (contract_address) = deploy(
         class_hash,
-        FALSE,
+        0,
         constructor_calldata_size=1,
         constructor_calldata=cast(new (owner_contract_address,), felt*),
         deploy_from_zero=FALSE,
@@ -120,8 +120,9 @@ func onERC721Received{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
     assert_not_zero(is_approved * caller);
     let (nft_appraisal_fee_) = nft_appraisal_fee.read();
     let (available_fees) = user_fees.read(from_);
-    assert_le(nft_appraisal_fee, available_fees);
-    user_fees.write(from_, available_fees - nft_appraisal_fee);
+    assert_le(nft_appraisal_fee_, available_fees);
+    user_fees.write(from_, available_fees - nft_appraisal_fee_);
+    let (nft_appraisal_period_) = nft_appraisal_period.read();
     return NFT.onReceivedFromL2(caller, from_, tokenId, data_len, data, nft_appraisal_period_);
 }
 

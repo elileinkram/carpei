@@ -52,9 +52,8 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
 
     function depositFees(address recipient) public payable returns (bool) {
         require(recipient != address(0));
-        uint256 deposited = userFees[recipient];
-        userFees[recipient] = deposited + msg.value;
-        require(userFees[recipient] > deposited);
+        require(msg.value != 0);
+        userFees[recipient] += msg.value;
         return true;
     }
 
@@ -115,8 +114,6 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         NFT storage nft = nonFungibles[nftHash];
         require(nft.key == 0);
         nonce += 1;
-        // prevent overflow
-        require(nonce != 0);
         nft.key = nonce;
         _safeMint(from, nonce);
         (
@@ -125,9 +122,8 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
             uint256 postageFee,
             uint256 appraisalFee
         ) = abi.decode(data, (uint256, uint256, uint256, uint256));
-        require(debtPeriod & lockupPeriod & postageFee != 0);
+        require(debtPeriod & lockupPeriod & postageFee & appraisalFee != 0);
         uint256 totalCost = postageFee + appraisalFee;
-        require(totalCost > postageFee);
         require(msg.sender == managerOf[from] || msg.sender == from);
         uint256 availableFees = userFees[from];
         require(availableFees >= totalCost);
