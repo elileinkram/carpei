@@ -43,7 +43,7 @@ namespace NFT {
         data: felt*,
         nft_appraisal_period: felt,
     ) -> (selector: felt) {
-        assert 1 = data_len;
+        assert TRUE = data_len;
         let nft_debt_period = data[0];
         assert_lt(nft_appraisal_period, nft_debt_period);
         let (block_timestamp) = get_block_timestamp();

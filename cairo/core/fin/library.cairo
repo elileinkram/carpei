@@ -79,7 +79,7 @@ namespace FIN {
         return FALSE;
     }
 
-    func transferFeesL2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    func receive_fees_from_l1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         from_: felt, amount: felt
     ) {
         let (deposited) = user_fees.read(from_);
@@ -93,7 +93,7 @@ namespace FIN {
         return ();
     }
 
-    func transferFeesL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    func transfer_fees_to_l1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         from_: felt, amount: felt
     ) -> (success: felt) {
         assert_lt(0, amount);

@@ -25,8 +25,8 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
     uint256 public immutable SELECTOR_STARK_INITIATE_APPRAISAL =
         _selectorStarkNet("onERC721ReceivedFromL1");
 
-    uint256 public immutable SELECTOR_STARK_TRANSFER_FEE =
-        _selectorStarkNet("transferFeesL2");
+    uint256 public immutable SELECTOR_STARK_RECEIVE_L1_FEES =
+        _selectorStarkNet("receive_fees_from_l1");
 
     IStarknetMessaging public immutable STARKNET_CROSS_DOMAIN_MESSENGER;
     uint256 public immutable L2_NFT_APPRAISAL_ADDR;
@@ -57,7 +57,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         return true;
     }
 
-    function transferFeesL1(address recipient, uint256 amount)
+    function receiveFeesFromL2(address recipient, uint256 amount)
         public
         returns (bool)
     {
@@ -73,7 +73,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         return true;
     }
 
-    function transferFeesL2(address from, uint256 amount)
+    function transferFeesToL2(address from, uint256 amount)
         public
         payable
         returns (bool)
@@ -85,7 +85,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         payload[1] = amount;
         STARKNET_CROSS_DOMAIN_MESSENGER.sendMessageToL2{value: msg.value}(
             L2_NFT_APPRAISAL_ADDR,
-            SELECTOR_STARK_TRANSFER_FEE,
+            SELECTOR_STARK_RECEIVE_L1_FEES,
             payload
         );
         return true;
