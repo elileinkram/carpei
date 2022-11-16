@@ -73,15 +73,10 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         return true;
     }
 
-    function transferFeesToL2(address from, uint256 amount)
-        public
-        payable
-        returns (bool)
-    {
-        require(from == msg.sender || managerOf[from] == msg.sender);
-        _decreaseUserFees(from, amount);
+    function transferFeesToL2(uint256 amount) public payable returns (bool) {
+        _decreaseMyFeeBalance(amount);
         uint256[] memory payload = new uint256[](2);
-        payload[0] = _uint256Addr(from);
+        payload[0] = _uint256Addr(msg.sender);
         payload[1] = amount;
         STARKNET_CROSS_DOMAIN_MESSENGER.sendMessageToL2{value: msg.value}(
             L2_NFT_APPRAISAL_ADDR,
@@ -92,15 +87,15 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
     }
 
     function withdrawFees(uint256 amount) public payable returns (bool) {
-        _decreaseUserFees(msg.sender, amount);
+        _decreaseMyFeeBalance(amount);
         payable(msg.sender).transfer(amount);
         return true;
     }
 
-    function _decreaseUserFees(address from, uint256 amount) private {
+    function _decreaseMyFeeBalance(uint256 amount) private {
         require(amount != 0);
-        require(amount <= userFees[from]);
-        userFees[from] -= amount;
+        require(amount <= userFees[msg.sender]);
+        userFees[msg.sender] -= amount;
     }
 
     function onERC721Received(
