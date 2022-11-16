@@ -69,11 +69,11 @@ namespace FIN {
     func is_approved_or_owner{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         caller: felt, owner: felt
     ) -> felt {
-        let (manager) = manager_of.read(owner);
-        if (manager == caller) {
+        if (owner == caller) {
             return TRUE;
         }
-        if (owner == caller) {
+        let (manager) = manager_of.read(owner);
+        if (manager == caller) {
             return TRUE;
         }
         return FALSE;
