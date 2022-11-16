@@ -5,8 +5,8 @@ pragma solidity ^0.8.0;
 
 import "../IERC20.sol";
 import "../extensions/IERC20Metadata.sol";
-import "../extensions/IERC20MintableBurnable.sol";
 import "../../../access/Ownable.sol";
+import "../../../core/starknet/IStarknetMessaging.sol";
 
 /**
  * @dev Implementation of the {IERC20} interface.
@@ -33,12 +33,12 @@ import "../../../access/Ownable.sol";
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-contract ERC20MintableBurnable is
-    Ownable,
-    IERC20,
-    IERC20Metadata,
-    IERC20MintableBurnable
-{
+contract ERC20StarkMessenger is Ownable, IERC20, IERC20Metadata {
+    IStarknetMessaging public immutable STARKNET_CROSS_DOMAIN_MESSENGER;
+    uint256 public constant DEPOSIT_TOKENS_L1_CODE = 1;
+
+    uint256 public immutable L2_RECEIVER;
+
     mapping(address => uint256) private _balances;
 
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -47,6 +47,18 @@ contract ERC20MintableBurnable is
 
     string private _name;
     string private _symbol;
+
+    uint256 public immutable SELECTOR_STARK_RECEIVE_L1_TOKENS =
+        _selectorStarkNet("receive_tokens_from_l1");
+
+    function _selectorStarkNet(string memory fn)
+        internal
+        pure
+        returns (uint256)
+    {
+        bytes32 digest = keccak256(abi.encodePacked(fn));
+        return uint256(digest) % 2**250;
+    }
 
     /**
      * @dev Sets the values for {name} and {symbol}.
@@ -57,9 +69,16 @@ contract ERC20MintableBurnable is
      * All two of these values are immutable: they can only be set once during
      * construction.
      */
-    constructor(string memory name_, string memory symbol_) {
+    constructor(
+        string memory name_,
+        string memory symbol_,
+        address starknetMessaging,
+        uint256 l2Receiver
+    ) {
         _name = name_;
         _symbol = symbol_;
+        STARKNET_CROSS_DOMAIN_MESSENGER = IStarknetMessaging(starknetMessaging);
+        L2_RECEIVER = l2Receiver;
     }
 
     /**
@@ -248,14 +267,33 @@ contract ERC20MintableBurnable is
         return true;
     }
 
-    function mint(address account, uint256 amount) external override {
-        Ownable._checkOwner();
-        _mint(account, amount);
+    function transferTokensToL2(uint256 amount) public payable returns (bool) {
+        _burn(msg.sender, amount);
+        uint256[] memory payload = new uint256[](2);
+        payload[0] = _uint256Addr(msg.sender);
+        payload[1] = amount;
+        STARKNET_CROSS_DOMAIN_MESSENGER.sendMessageToL2{value: msg.value}(
+            L2_RECEIVER,
+            SELECTOR_STARK_RECEIVE_L1_TOKENS,
+            payload
+        );
+        return true;
     }
 
-    function burn(address account, uint256 amount) external override {
-        Ownable._checkOwner();
-        _burn(account, amount);
+    function receiveTokensFromL2(address recipient, uint256 amount)
+        public
+        returns (bool)
+    {
+        uint256[] memory payload = new uint256[](3);
+        payload[0] = _uint256Addr(recipient);
+        payload[1] = amount;
+        payload[2] = DEPOSIT_TOKENS_L1_CODE;
+        STARKNET_CROSS_DOMAIN_MESSENGER.consumeMessageFromL2(
+            L2_RECEIVER,
+            payload
+        );
+        _mint(recipient, amount);
+        return true;
     }
 
     /**
@@ -441,4 +479,8 @@ contract ERC20MintableBurnable is
         address to,
         uint256 amount
     ) internal virtual {}
+
+    function _uint256Addr(address addr) internal pure returns (uint256) {
+        return uint256(uint160(addr));
+    }
 }

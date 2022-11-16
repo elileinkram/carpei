@@ -5,7 +5,7 @@ import "../token/ERC721/IERC721Receiver.sol";
 import "../token/ERC721/ERC721.sol";
 import "../token/ERC721/IERC721.sol";
 import "./starknet/IStarknetMessaging.sol";
-import "../token/ERC20/presets/ERC20MintableBurnable.sol";
+import "../token/ERC20/presets/ERC20StarkMessenger.sol";
 
 contract Carpei is IERC721Receiver, ERC165, ERC721 {
     mapping(bytes32 => NFT) public nonFungibles;
@@ -18,7 +18,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         bool isAppraised;
     }
 
-    ERC20MintableBurnable public immutable ERC20_MESSENGER;
+    ERC20StarkMessenger public immutable ERC20_MESSENGER;
 
     uint256 public nonce;
 
@@ -29,20 +29,25 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         _selectorStarkNet("receive_fees_from_l1");
 
     IStarknetMessaging public immutable STARKNET_CROSS_DOMAIN_MESSENGER;
-    uint256 public immutable L2_NFT_APPRAISAL_ADDR;
+    uint256 public immutable L2_RECEIVER;
     uint256 public constant DEPOSIT_FEES_L1_CODE = 0;
 
     constructor(
-        address starknetMessaging,
-        uint256 nftAppraisal,
         string memory name,
-        string memory symbol
+        string memory symbol,
+        address starknetMessaging,
+        uint256 l2Receiver
     ) {
         require(starknetMessaging != address(0));
-        require(nftAppraisal != 0);
+        require(l2Receiver != 0);
         STARKNET_CROSS_DOMAIN_MESSENGER = IStarknetMessaging(starknetMessaging);
-        ERC20_MESSENGER = new ERC20MintableBurnable(name, symbol);
-        L2_NFT_APPRAISAL_ADDR = nftAppraisal;
+        L2_RECEIVER = l2Receiver;
+        ERC20_MESSENGER = new ERC20StarkMessenger(
+            name,
+            symbol,
+            starknetMessaging,
+            l2Receiver
+        );
     }
 
     function approveFeeManager(address addr) public returns (bool) {
@@ -66,7 +71,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         payload[1] = amount;
         payload[2] = DEPOSIT_FEES_L1_CODE;
         STARKNET_CROSS_DOMAIN_MESSENGER.consumeMessageFromL2(
-            L2_NFT_APPRAISAL_ADDR,
+            L2_RECEIVER,
             payload
         );
         userFees[recipient] += amount;
@@ -79,7 +84,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         payload[0] = _uint256Addr(msg.sender);
         payload[1] = amount;
         STARKNET_CROSS_DOMAIN_MESSENGER.sendMessageToL2{value: msg.value}(
-            L2_NFT_APPRAISAL_ADDR,
+            L2_RECEIVER,
             SELECTOR_STARK_RECEIVE_L1_FEES,
             payload
         );
@@ -133,7 +138,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         payload[5] = debtPeriod;
         payload[6] = nft.postExpiry;
         STARKNET_CROSS_DOMAIN_MESSENGER.sendMessageToL2{value: postageFee}(
-            L2_NFT_APPRAISAL_ADDR,
+            L2_RECEIVER,
             SELECTOR_STARK_INITIATE_APPRAISAL,
             payload
         );
