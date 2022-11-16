@@ -4,7 +4,7 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.math import assert_lt, assert_in_range, assert_nn
+from starkware.cairo.common.math import assert_lt, assert_in_range
 
 @storage_var
 func nft_appraisal_period() -> (res: felt) {
