@@ -235,21 +235,21 @@ func onERC721ReceivedFromL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, rang
 }
 
 @l1_handler
-func depositFeesL2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+func transferFeesL2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     from_address: felt, from_: felt, fee_amount: felt
 ) {
     assert L1_CONTRACT_ADDRESS = from_address;
-    return FIN.depositFeesL2(from_, fee_amount);
+    return FIN.transferFeesL2(from_, fee_amount);
 }
 
 @external
-func depositFeesL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+func transferFeesL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     from_: felt, amount: felt
 ) -> (success: felt) {
     let (caller) = get_caller_address();
     let is_approved = FIN.is_approved_or_owner(caller, from_);
     assert_not_zero(is_approved);
-    return FIN.depositFeesL1(from_, amount);
+    return FIN.transferFeesL1(from_, amount);
 }
 
 @external

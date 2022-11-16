@@ -18,19 +18,19 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         bool isAppraised;
     }
 
-    ERC20MintableBurnable private immutable ERC20_MESSENGER;
+    ERC20MintableBurnable public immutable ERC20_MESSENGER;
 
     uint256 public nonce;
 
     uint256 public immutable SELECTOR_STARK_INITIATE_APPRAISAL =
         _selectorStarkNet("onERC721ReceivedFromL1");
 
-    uint256 public immutable SELECTOR_STARK_BRIDGE_FEE =
-        _selectorStarkNet("depositFeesL2");
+    uint256 public immutable SELECTOR_STARK_TRANSFER_FEE =
+        _selectorStarkNet("transferFeesL2");
 
     IStarknetMessaging public immutable STARKNET_CROSS_DOMAIN_MESSENGER;
     uint256 public immutable L2_NFT_APPRAISAL_ADDR;
-    uint256 constant DEPOSIT_FEES_L1_CODE = 0;
+    uint256 public constant DEPOSIT_FEES_L1_CODE = 0;
 
     constructor(
         address starknetMessaging,
@@ -57,7 +57,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         return true;
     }
 
-    function depositFeesL1(address recipient, uint256 amount)
+    function transferFeesL1(address recipient, uint256 amount)
         public
         returns (bool)
     {
@@ -73,7 +73,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         return true;
     }
 
-    function depositFeesL2(address from, uint256 amount)
+    function transferFeesL2(address from, uint256 amount)
         public
         payable
         returns (bool)
@@ -85,7 +85,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         payload[1] = amount;
         STARKNET_CROSS_DOMAIN_MESSENGER.sendMessageToL2{value: msg.value}(
             L2_NFT_APPRAISAL_ADDR,
-            SELECTOR_STARK_BRIDGE_FEE,
+            SELECTOR_STARK_TRANSFER_FEE,
             payload
         );
         return true;
@@ -181,11 +181,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         } else {
             nft.isAppraised = false;
         }
-        IERC721(collection).safeTransferFrom(
-            address(this),
-            msg.sender,
-            tokenId
-        );
+        IERC721(collection).safeTransferFrom(address(this), owner, tokenId);
         return true;
     }
 

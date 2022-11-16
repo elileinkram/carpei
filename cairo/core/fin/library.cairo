@@ -78,7 +78,7 @@ namespace FIN {
         return FALSE;
     }
 
-    func depositFeesL2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    func transferFeesL2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         from_: felt, amount: felt
     ) {
         let (deposited) = user_fees.read(from_);
@@ -92,7 +92,7 @@ namespace FIN {
         return ();
     }
 
-    func depositFeesL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    func transferFeesL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         from_: felt, amount: felt
     ) -> (success: felt) {
         assert_lt(0, amount);
