@@ -8,6 +8,7 @@ from starkware.cairo.common.uint256 import Uint256
 from introspection.ERC165.library import ERC165
 from token.ERC20.library import ERC20
 from token.ERC721.IERC721 import IERC721
+from starkware.cairo.common.alloc import alloc
 from utils.constants.library import (
     IERC20_ID,
     IERC20Metadata_ID,
@@ -24,7 +25,7 @@ from core.DAO.library import (
     nft_l1_extra_lockup_period,
 )
 from core.FIN.library import FIN, user_fees, manager_of
-from starkware.cairo.common.bool import TRUE
+from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.starknet.common.syscalls import get_caller_address, deploy, get_contract_address
 from starkware.starknet.common.messages import send_message_to_l1
 from starkware.cairo.common.math import assert_lt, assert_le, assert_not_zero
@@ -117,6 +118,7 @@ func allowance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func onERC721Received{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     TRUE, from_: felt, tokenId: Uint256, data_len: felt, data: felt*
 ) -> (selector: felt) {
+    alloc_locals;
     let (caller) = get_caller_address();
     let is_approved = FIN.is_approved_or_owner(caller, from_);
     assert_not_zero(is_approved * caller);
@@ -136,36 +138,37 @@ func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_pt
     appraisal_value: Uint256,
     power_token_amount: Uint256,
 ) -> (success: felt) {
-    let (nft_) = nft_listings.read(collection_address, token_id);
-    return FIN.appraise_nft(
-        from_,
-        collection_address,
-        token_id,
-        nft_.appraisal_post_expiry_date,
-        appraisal_value,
-        power_token_amount,
-    );
+    // let (nft_) = nft_listings.read(collection_address, token_id);
+    // return FIN.appraise_nft(
+    //     from_,
+    //     collection_address,
+    //     token_id,
+    //     nft_.appraisal_post_expiry_date,
+    //     appraisal_value,
+    //     power_token_amount,
+    // );
+    return (success=TRUE);
 }
 
-@external
-func verify_median_appraisal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    index_of_median: felt,
-    collection_address: felt,
-    token_id: Uint256,
-    nft_member_appraisals_len: felt,
-    nft_member_appraisals: felt*,
-) -> (success: felt) {
-    let (nft_) = nft_listings.read(collection_address, token_id);
-    return FIN.verify_median_appraisal(
-        index_of_median,
-        collection_address,
-        token_id,
-        nft_member_appraisals_len,
-        nft_member_appraisals,
-        nft_.appraisal_post_expiry_date,
-        nft_.fundraising_post_expiry_date,
-    );
-}
+// @external
+// func verify_median_appraisal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+//     index_of_median: felt,
+//     collection_address: felt,
+//     token_id: Uint256,
+//     nft_member_appraisals_len: felt,
+//     nft_member_appraisals: felt*,
+// ) -> (success: felt) {
+//     let (nft_) = nft_listings.read(collection_address, token_id);
+//     return FIN.verify_median_appraisal(
+//         index_of_median,
+//         collection_address,
+//         token_id,
+//         nft_member_appraisals_len,
+//         nft_member_appraisals,
+//         nft_.appraisal_post_expiry_date,
+//         nft_.fundraising_post_expiry_date,
+//     );
+// }
 
 @external
 func transfer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -264,7 +267,7 @@ func transfer_tokens_to_l1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
     assert payload[1] = amount.low;
     assert payload[2] = amount.high;
     assert payload[3] = DEPOSIT_TOKEN_L1_CODE;
-    send_message_to_l1(L1_TOKEN_CONTRACT_ADDRESS, payload);
+    send_message_to_l1(L1_TOKEN_CONTRACT_ADDRESS, 4, payload);
     return (success=TRUE);
 }
 

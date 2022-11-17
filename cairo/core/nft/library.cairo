@@ -8,7 +8,7 @@ from utils.constants.library import IERC721_RECEIVER_ID
 from starkware.starknet.common.syscalls import get_contract_address, get_block_timestamp
 from token.ERC721.IERC721MintableBurnable import IERC721MintableBurnable
 from starkware.cairo.common.uint256 import Uint256, uint256_check
-from starkware.cairo.common.math import assert_not_zero, assert_le, split_felt
+from starkware.cairo.common.math import assert_not_zero, assert_le, split_felt, assert_lt
 from starkware.cairo.common.bool import TRUE, FALSE
 from security.safemath.library import SafeUint256
 
@@ -50,7 +50,7 @@ namespace NFT {
         let appraisal_post_expiry_date: felt = block_timestamp + nft_appraisal_period + 1;
         let (nft_key_contract_address_) = nft_key_contract_address.read();
         let (nonce: Uint256) = nft_nonce.read();
-        let (key: Uint256) = SafeUint256.add(nonce, 1);
+        let (key: Uint256) = SafeUint256.add(nonce, Uint256(1, 0));
         nft_nonce.write(key);
         IERC721MintableBurnable.mint(nft_key_contract_address_, from_, key);
         return _onReceived(
