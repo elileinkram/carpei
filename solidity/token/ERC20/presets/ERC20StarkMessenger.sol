@@ -269,9 +269,10 @@ contract ERC20StarkMessenger is Ownable, IERC20, IERC20Metadata {
 
     function transferTokensToL2(uint256 amount) public payable returns (bool) {
         _burn(msg.sender, amount);
-        uint256[] memory payload = new uint256[](2);
+        uint256[] memory payload = new uint256[](3);
         payload[0] = _uint256Addr(msg.sender);
-        payload[1] = amount;
+        payload[1] = get_low_n_bits(amount, 128);
+        payload[2] = get_high_n_bits(amount, 128);
         STARKNET_CROSS_DOMAIN_MESSENGER.sendMessageToL2{value: msg.value}(
             L2_RECEIVER,
             SELECTOR_STARK_RECEIVE_L1_TOKENS,
@@ -284,16 +285,34 @@ contract ERC20StarkMessenger is Ownable, IERC20, IERC20Metadata {
         public
         returns (bool)
     {
-        uint256[] memory payload = new uint256[](3);
+        uint256[] memory payload = new uint256[](4);
         payload[0] = _uint256Addr(recipient);
-        payload[1] = amount;
-        payload[2] = DEPOSIT_TOKENS_L1_CODE;
+        payload[1] = get_low_n_bits(amount, 128);
+        payload[2] = get_high_n_bits(amount, 128);
+        payload[3] = DEPOSIT_TOKENS_L1_CODE;
         STARKNET_CROSS_DOMAIN_MESSENGER.consumeMessageFromL2(
             L2_RECEIVER,
             payload
         );
         _mint(recipient, amount);
         return true;
+    }
+
+    function get_low_n_bits(uint256 x, uint256 n)
+        internal
+        pure
+        returns (uint256)
+    {
+        uint256 mask = (1 << n) - 1;
+        return x & mask;
+    }
+
+    function get_high_n_bits(uint256 x, uint256 n)
+        internal
+        pure
+        returns (uint256)
+    {
+        return x >> n;
     }
 
     /**

@@ -30,6 +30,8 @@ const IERC721_ID = 0x80ac58cd;
 // Roles
 //
 
-const L1_CONTRACT_ADDRESS = 0x1;
+const L1_NFT_CONTRACT_ADDRESS = 0x0;
+const L1_TOKEN_CONTRACT_ADDRESS = 0x1;
 
 const DEPOSIT_FEES_L1_CODE = 0;
+const DEPOSIT_TOKEN_L1_CODE = 1;

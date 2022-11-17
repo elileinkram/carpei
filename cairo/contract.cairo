@@ -12,7 +12,9 @@ from utils.constants.library import (
     IERC20_ID,
     IERC20Metadata_ID,
     IERC721_RECEIVER_ID,
-    L1_CONTRACT_ADDRESS,
+    L1_NFT_CONTRACT_ADDRESS,
+    L1_TOKEN_CONTRACT_ADDRESS,
+    DEPOSIT_TOKEN_L1_CODE,
 )
 from core.NFT.library import NFT, nft_listings, nft_key_contract_address
 from core.DAO.library import (
@@ -211,7 +213,7 @@ func onERC721ReceivedFromL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, rang
     nft_debt_period: felt,
     nft_post_expiry: felt,
 ) {
-    assert L1_CONTRACT_ADDRESS = from_address;
+    assert L1_NFT_CONTRACT_ADDRESS = from_address;
 
     let (nft_appraisal_period_) = nft_appraisal_period.read();
 
@@ -238,8 +240,32 @@ func onERC721ReceivedFromL1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, rang
 func receive_fees_from_l1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     from_address: felt, from_: felt, fee_amount: felt
 ) {
-    assert L1_CONTRACT_ADDRESS = from_address;
+    assert L1_NFT_CONTRACT_ADDRESS = from_address;
     return FIN.receive_fees_from_l1(from_, fee_amount);
+}
+
+@l1_handler
+func receive_tokens_from_l1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    from_address: felt, from_: felt, token_amount_low_bits: felt, token_amount_high_bits: felt
+) {
+    assert L1_TOKEN_CONTRACT_ADDRESS = from_address;
+    ERC20._mint(from_, Uint256(token_amount_low_bits, token_amount_high_bits));
+    return ();
+}
+
+@external
+func transfer_tokens_to_l1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    amount: Uint256
+) -> (success: felt) {
+    let (caller) = get_caller_address();
+    ERC20._burn(caller, amount);
+    let (payload: felt*) = alloc();
+    assert payload[0] = caller;
+    assert payload[1] = amount.low;
+    assert payload[2] = amount.high;
+    assert payload[3] = DEPOSIT_TOKEN_L1_CODE;
+    send_message_to_l1(L1_TOKEN_CONTRACT_ADDRESS, payload);
+    return (success=TRUE);
 }
 
 @external

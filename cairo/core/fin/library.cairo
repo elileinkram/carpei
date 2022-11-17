@@ -15,7 +15,7 @@ from starkware.cairo.common.math import (
     assert_nn_le,
     assert_lt,
 )
-from utils.constants.library import L1_CONTRACT_ADDRESS, DEPOSIT_FEES_L1_CODE
+from utils.constants.library import L1_NFT_CONTRACT_ADDRESS, DEPOSIT_FEES_L1_CODE
 from starkware.starknet.common.messages import send_message_to_l1
 
 @storage_var
@@ -109,7 +109,7 @@ namespace FIN {
         assert payload[1] = amount;
         assert payload[2] = DEPOSIT_FEES_L1_CODE;
 
-        send_message_to_l1(L1_CONTRACT_ADDRESS, 3, payload);
+        send_message_to_l1(L1_NFT_CONTRACT_ADDRESS, 3, payload);
         return (success=TRUE);
     }
     func _vote_count_has_changed{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
