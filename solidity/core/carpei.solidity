@@ -31,7 +31,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
     IStarknetMessaging public immutable STARKNET_CROSS_DOMAIN_MESSENGER;
     uint256 public immutable L2_RECEIVER;
     uint256 public constant DEPOSIT_FEES_L1_CODE = 0;
-    uint256 public constant max_felt_value = 2**252;
+    uint256 public constant felt_upper_bound = 2**252;
 
     constructor(
         string memory name,
@@ -59,7 +59,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
     function depositFees(address recipient) public payable returns (bool) {
         require(recipient != address(0));
         userFees[recipient] += msg.value;
-        require(userFees[recipient] < max_felt_value);
+        require(userFees[recipient] < felt_upper_bound);
         return true;
     }
 
