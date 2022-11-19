@@ -32,7 +32,7 @@ func user_fees(user: felt) -> (res: felt) {
 }
 
 @storage_var
-func manager_of_user_fees(user: felt) -> (res: felt) {
+func user_fee_delegate(user: felt) -> (res: felt) {
 }
 
 @storage_var
@@ -60,8 +60,8 @@ struct Appraisal {
 func nft_appraisals(
     collection_address: felt,
     token_id: Uint256,
-    appraiser: felt,
-    manager: felt,
+    account: felt,
+    delegate: felt,
     appraisal_post_expiry_date: felt,
 ) -> (appraisal: Appraisal) {
 }
@@ -93,8 +93,8 @@ namespace FIN {
         if (owner == caller) {
             return TRUE;
         }
-        let (manager) = manager_of_user_fees.read(owner);
-        if (manager == caller) {
+        let (delegate) = user_fee_delegate.read(owner);
+        if (delegate == caller) {
             return TRUE;
         }
         return FALSE;
@@ -106,8 +106,8 @@ namespace FIN {
         if (owner == caller) {
             return TRUE;
         }
-        let (manager) = manager_of_user_fees.read(owner);
-        if (manager == caller) {
+        let (delegate) = user_fee_delegate.read(owner);
+        if (delegate == caller) {
             return TRUE;
         }
         return FALSE;
@@ -153,13 +153,13 @@ namespace FIN {
     //     collection_address: felt,
     //     token_id: Uint256,
     //     appraiser: felt,
-    //     manager: felt,
+    //     delegate: felt,
     //     appraisal_post_expiry_date: felt,
     //     power_token_amount: Uint256,
     // ) -> (success: felt, increase_vote: felt) {
     //     alloc_locals;
     //     let (old_appraisal: Appraisal) = nft_appraisals.read(
-    //         collection_address, token_id, appraiser, manager, appraisal_post_expiry_date
+    //         collection_address, token_id, appraiser, delegate, appraisal_post_expiry_date
     //     );
     //     let prev_power_token_amount: Uint256 = old_appraisal.power_token_amount;
     //     let (prev_token_amount_is_zero) = uint256_eq(prev_power_token_amount, Uint256(0, 0));
@@ -223,10 +223,10 @@ namespace FIN {
             tempvar pedersen_ptr = pedersen_ptr;
             tempvar range_check_ptr = range_check_ptr;
         } else {
-            let (manager_balance: Uint256) = appraisal_token_allowances.read(account, delegate);
+            let (delegate_balance: Uint256) = appraisal_token_allowances.read(account, delegate);
             assert delegate = caller;
-            assert_uint256_le(old_power_token_amount, manager_balance);
-            assert_uint256_le(power_token_amount, manager_balance);
+            assert_uint256_le(old_power_token_amount, delegate_balance);
+            assert_uint256_le(power_token_amount, delegate_balance);
             tempvar syscall_ptr = syscall_ptr;
             tempvar pedersen_ptr = pedersen_ptr;
             tempvar range_check_ptr = range_check_ptr;

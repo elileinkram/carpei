@@ -33,7 +33,7 @@ from core.DAO.library import (
 from core.FIN.library import (
     FIN,
     user_fees,
-    manager_of_user_fees,
+    user_fee_delegate,
     appraisal_token_allowances,
     power_token_balances,
     nft_appraisals,
@@ -327,9 +327,9 @@ func transfer_fees_to_l1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
 @external
 func approveFeeManager{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    manager: felt
+    delegate: felt
 ) -> (success: felt) {
     let (from_) = get_caller_address();
-    manager_of_user_fees.write(from_, manager);
+    user_fee_delegate.write(from_, delegate);
     return (success=TRUE);
 }
