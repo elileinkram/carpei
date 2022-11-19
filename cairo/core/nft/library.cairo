@@ -54,7 +54,7 @@ namespace NFT {
         let (nonce: Uint256) = nft_nonce.read();
         let (key: Uint256) = SafeUint256.add(nonce, Uint256(1, 0));
         nft_nonce.write(key);
-        IERC721MintableBurnable.safe_mint(nft_key_contract_address_, from_, key);
+        IERC721MintableBurnable.safeMint(nft_key_contract_address_, from_, key);
         return _onReceived(
             collection_address,
             from_,

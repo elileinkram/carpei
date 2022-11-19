@@ -150,6 +150,13 @@ func onERC721Received{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
 }
 
 @external
+func approve_appraisal_manager{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    delegate: felt, amount: Uint256
+) -> (success: felt) {
+    return FIN.approve_appraisal_manager(delegate, amount);
+}
+
+@external
 func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     collection_address: felt,
     token_id: Uint256,

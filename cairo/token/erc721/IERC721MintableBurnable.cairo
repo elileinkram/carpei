@@ -30,7 +30,7 @@ namespace IERC721MintableBurnable {
 
     func isApprovedForAll(owner: felt, operator: felt) -> (isApproved: felt) {
     }
-    func mint(to: felt, tokenId: Uint256) {
+    func safeMint(to: felt, tokenId: Uint256) {
     }
 
     func burn(tokenId: Uint256) {

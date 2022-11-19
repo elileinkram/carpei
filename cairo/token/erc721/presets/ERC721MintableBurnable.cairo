@@ -104,7 +104,7 @@ func safeTransferFrom{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_chec
 }
 
 @external
-func safe_mint{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+func safeMint{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
     to: felt, tokenId: Uint256
 ) {
     Ownable.assert_only_owner();

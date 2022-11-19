@@ -206,6 +206,15 @@ namespace FIN {
         return ();
     }
 
+    func approve_appraisal_manager{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        delegate: felt, amount: Uint256
+    ) -> (success: felt) {
+        let (account) = get_caller_address();
+        assert_not_zero(delegate);
+        appraisal_token_allowances.write(account, delegate, amount);
+        return (success=TRUE);
+    }
+
     func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         collection_address: felt,
         token_id: Uint256,

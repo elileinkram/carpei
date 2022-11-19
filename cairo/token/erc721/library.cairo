@@ -221,9 +221,9 @@ namespace ERC721 {
         return ();
     }
 
-    func _is_approved_or_owner_of_fees{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
-        spender: felt, token_id: Uint256
-    ) -> felt {
+    func _is_approved_or_owner_of_fees{
+        pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr
+    }(spender: felt, token_id: Uint256) -> felt {
         alloc_locals;
 
         let exists = _exists(token_id);
