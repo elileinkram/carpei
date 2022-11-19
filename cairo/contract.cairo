@@ -4,7 +4,13 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.uint256 import Uint256, uint256_check, uint256_lt, assert_uint256_le
+from starkware.cairo.common.uint256 import (
+    Uint256,
+    uint256_check,
+    uint256_lt,
+    assert_uint256_le,
+    assert_uint256_lt,
+)
 from introspection.ERC165.library import ERC165
 from token.ERC20.library import ERC20
 from token.ERC721.IERC721 import IERC721
@@ -176,7 +182,7 @@ func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_pt
         tempvar range_check_ptr = range_check_ptr;
     } else {
         let (manager_balance: Uint256) = appraisal_token_allowances.read(appraiser, caller);
-        assert_uint256_le(Uint256(0, 0), manager_balance);
+        assert_uint256_lt(Uint256(0, 0), manager_balance);
         assert_uint256_le(power_token_amount, manager_balance);
         tempvar syscall_ptr = syscall_ptr;
         tempvar pedersen_ptr = pedersen_ptr;
