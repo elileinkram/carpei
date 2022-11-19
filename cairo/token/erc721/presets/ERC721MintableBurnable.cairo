@@ -104,11 +104,11 @@ func safeTransferFrom{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_chec
 }
 
 @external
-func mint{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+func safe_mint{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
     to: felt, tokenId: Uint256
 ) {
     Ownable.assert_only_owner();
-    ERC721._mint(to, tokenId);
+    ERC721._safe_mint(to, tokenId);
     return ();
 }
 

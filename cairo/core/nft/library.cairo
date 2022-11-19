@@ -54,7 +54,7 @@ namespace NFT {
         let (nonce: Uint256) = nft_nonce.read();
         let (key: Uint256) = SafeUint256.add(nonce, Uint256(1, 0));
         nft_nonce.write(key);
-        IERC721MintableBurnable.mint(nft_key_contract_address_, from_, key);
+        IERC721MintableBurnable.safe_mint(nft_key_contract_address_, from_, key);
         return _onReceived(
             collection_address,
             from_,
@@ -107,7 +107,7 @@ namespace NFT {
         alloc_locals;
         let debt_post_expiry_date: felt = appraisal_post_expiry_date + nft_debt_period;
         let (nft_) = nft_listings.read(collection_address, token_id, l1_native);
-        assert_uint256_eq(Uint256(0, 0), nft_.key);
+        assert_uint256_eq(nft_.key, Uint256(0, 0));
         nft_listings.write(
             collection_address,
             token_id,
