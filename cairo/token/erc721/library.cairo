@@ -166,7 +166,7 @@ namespace ERC721 {
             uint256_check(token_id);
         }
         let (caller) = get_caller_address();
-        let is_approved = _is_approved_or_owner(caller, token_id);
+        let is_approved = _is_approved_or_owner_of_fees(caller, token_id);
         with_attr error_message(
                 "ERC721: either is not approved or the caller is the zero address") {
             assert_not_zero(caller * is_approved);
@@ -189,7 +189,7 @@ namespace ERC721 {
             uint256_check(token_id);
         }
         let (caller) = get_caller_address();
-        let is_approved = _is_approved_or_owner(caller, token_id);
+        let is_approved = _is_approved_or_owner_of_fees(caller, token_id);
         with_attr error_message(
                 "ERC721: either is not approved or the caller is the zero address") {
             assert_not_zero(caller * is_approved);
@@ -221,7 +221,7 @@ namespace ERC721 {
         return ();
     }
 
-    func _is_approved_or_owner{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+    func _is_approved_or_owner_of_fees{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
         spender: felt, token_id: Uint256
     ) -> felt {
         alloc_locals;

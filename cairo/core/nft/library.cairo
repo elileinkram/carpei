@@ -7,7 +7,8 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from utils.constants.library import IERC721_RECEIVER_ID
 from starkware.starknet.common.syscalls import get_contract_address, get_block_timestamp
 from token.ERC721.IERC721MintableBurnable import IERC721MintableBurnable
-from starkware.cairo.common.uint256 import Uint256, uint256_check
+
+from starkware.cairo.common.uint256 import Uint256, uint256_check, assert_uint256_eq
 from starkware.cairo.common.math import assert_not_zero, assert_le, split_felt, assert_lt
 from starkware.cairo.common.bool import TRUE, FALSE
 from security.safemath.library import SafeUint256
@@ -16,6 +17,7 @@ struct NFT_ {
     from_: felt,
     appraisal_post_expiry_date: felt,
     debt_post_expiry_date: felt,
+    key: Uint256,
 }
 
 @storage_var
@@ -54,7 +56,13 @@ namespace NFT {
         nft_nonce.write(key);
         IERC721MintableBurnable.mint(nft_key_contract_address_, from_, key);
         return _onReceived(
-            collection_address, from_, tokenId, FALSE, appraisal_post_expiry_date, nft_debt_period
+            collection_address,
+            from_,
+            tokenId,
+            FALSE,
+            appraisal_post_expiry_date,
+            nft_debt_period,
+            key,
         );
     }
 
@@ -76,7 +84,13 @@ namespace NFT {
         let l1_lockup_expiry: felt = appraisal_post_expiry_date + nft_l1_extra_lockup_period;
         assert_le(l1_lockup_expiry, nft_post_expiry);
         _onReceived(
-            collection_address, from_, token_id, TRUE, appraisal_post_expiry_date, nft_debt_period
+            collection_address,
+            from_,
+            token_id,
+            TRUE,
+            appraisal_post_expiry_date,
+            nft_debt_period,
+            Uint256(1, 0),
         );
         return ();
     }
@@ -88,15 +102,17 @@ namespace NFT {
         l1_native: felt,
         appraisal_post_expiry_date: felt,
         nft_debt_period: felt,
+        key: Uint256,
     ) {
+        alloc_locals;
         let debt_post_expiry_date: felt = appraisal_post_expiry_date + nft_debt_period;
         let (nft_) = nft_listings.read(collection_address, token_id, l1_native);
-        assert FALSE = nft_.from_;
+        assert_uint256_eq(Uint256(0, 0), nft_.key);
         nft_listings.write(
             collection_address,
             token_id,
             l1_native,
-            NFT_(from_, appraisal_post_expiry_date, debt_post_expiry_date,),
+            NFT_(from_, appraisal_post_expiry_date, debt_post_expiry_date, key),
         );
         return ();
     }
@@ -108,6 +124,7 @@ namespace NFT {
         l1_native: felt,
         appraisal_post_expiry_date: felt,
         nft_debt_period: felt,
+        key: Uint256,
     ) -> (selector: felt) {
         _register_nft(
             collection_address,
@@ -116,6 +133,7 @@ namespace NFT {
             l1_native,
             appraisal_post_expiry_date,
             nft_debt_period,
+            key,
         );
         nft_registered.emit(collection_address, token_id, l1_native);
         return (selector=IERC721_RECEIVER_ID);

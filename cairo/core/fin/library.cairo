@@ -7,7 +7,14 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.starknet.common.syscalls import get_caller_address, get_block_timestamp
 from starkware.cairo.common.bool import TRUE, FALSE
 from security.safemath.library import SafeUint256
-from starkware.cairo.common.uint256 import Uint256, uint256_check, uint256_eq, uint256_lt
+from starkware.cairo.common.uint256 import (
+    Uint256,
+    uint256_check,
+    uint256_eq,
+    uint256_lt,
+    assert_uint256_le,
+    assert_uint256_eq,
+)
 from starkware.cairo.common.math import (
     assert_not_zero,
     assert_in_range,
@@ -25,7 +32,7 @@ func user_fees(user: felt) -> (res: felt) {
 }
 
 @storage_var
-func manager_of(user: felt) -> (res: felt) {
+func manager_of_user_fees(user: felt) -> (res: felt) {
 }
 
 @storage_var
@@ -36,6 +43,14 @@ func power_token_balances(owner: felt) -> (amount: Uint256) {
 func power_token_allowances(owner: felt, spender: felt) -> (amount: Uint256) {
 }
 
+@storage_var
+func appraisal_token_balances(owner: felt) -> (amount: Uint256) {
+}
+
+@storage_var
+func appraisal_token_allowances(owner: felt, spender: felt) -> (amount: Uint256) {
+}
+
 struct Appraisal {
     appraisal_value: Uint256,
     power_token_amount: Uint256,
@@ -43,14 +58,18 @@ struct Appraisal {
 
 @storage_var
 func nft_appraisals(
-    collection_address: felt, from_: felt, token_id: Uint256, appraisal_post_expiry_date: felt
+    collection_address: felt,
+    token_id: Uint256,
+    appraiser: felt,
+    manager: felt,
+    appraisal_post_expiry_date: felt,
 ) -> (appraisal: Appraisal) {
 }
 
 @storage_var
-func nft_appraisal_member_count(
+func nft_appraisal_power_count(
     collection_address: felt, token_id: Uint256, appraisal_post_expiry_date: felt
-) -> (vote_count: felt) {
+) -> (power_count: Uint256) {
 }
 
 @storage_var
@@ -68,13 +87,26 @@ func nft_median_appraisal_verified(collection_address: felt, token_id: Uint256) 
 }
 
 namespace FIN {
-    func is_approved_or_owner{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        caller: felt, owner: felt
-    ) -> felt {
+    func is_approved_or_owner_of_fees{
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+    }(caller: felt, owner: felt) -> felt {
         if (owner == caller) {
             return TRUE;
         }
-        let (manager) = manager_of.read(owner);
+        let (manager) = manager_of_user_fees.read(owner);
+        if (manager == caller) {
+            return TRUE;
+        }
+        return FALSE;
+    }
+
+    func is_approved_or_owner_of_appraisal_tokens{
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+    }(caller: felt, owner: felt, amount: felt) -> felt {
+        if (owner == caller) {
+            return TRUE;
+        }
+        let (manager) = manager_of_user_fees.read(owner);
         if (manager == caller) {
             return TRUE;
         }
@@ -96,8 +128,10 @@ namespace FIN {
     }
 
     func transfer_fees_to_l1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        from_: felt, amount: felt
+        amount: felt
     ) -> (success: felt) {
+        let (from_) = get_caller_address();
+
         assert_lt(0, amount);
 
         let (deposited) = user_fees.read(from_);
@@ -114,16 +148,18 @@ namespace FIN {
         send_message_to_l1(L1_NFT_CONTRACT_ADDRESS, 3, payload);
         return (success=TRUE);
     }
+
     // func _vote_count_has_changed{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     //     collection_address: felt,
-    //     from_: felt,
     //     token_id: Uint256,
+    //     appraiser: felt,
+    //     manager: felt,
     //     appraisal_post_expiry_date: felt,
     //     power_token_amount: Uint256,
     // ) -> (success: felt, increase_vote: felt) {
     //     alloc_locals;
     //     let (old_appraisal: Appraisal) = nft_appraisals.read(
-    //         collection_address, from_, token_id, appraisal_post_expiry_date
+    //         collection_address, token_id, appraiser, manager, appraisal_post_expiry_date
     //     );
     //     let prev_power_token_amount: Uint256 = old_appraisal.power_token_amount;
     //     let (prev_token_amount_is_zero) = uint256_eq(prev_power_token_amount, Uint256(0, 0));
@@ -134,7 +170,7 @@ namespace FIN {
     //     return (success=TRUE, increase_vote=prev_token_amount_is_zero);
     // }
 
-    // func _update_nft_appraisal_member_count{
+    // func _update_nft_appraisal_power_count{
     //     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     // }(
     //     collection_address: felt,
@@ -142,37 +178,33 @@ namespace FIN {
     //     appraisal_post_expiry_date: felt,
     //     increase_vote: felt,
     // ) {
-    //     let (prev_vote_count) = nft_appraisal_member_count.read(
+    //     let (prev_vote_count) = nft_appraisal_power_count.read(
     //         collection_address, token_id, appraisal_post_expiry_date
     //     );
     //     if (increase_vote == TRUE) {
-    //         nft_appraisal_member_count.write(
+    //         nft_appraisal_power_count.write(
     //             collection_address, token_id, appraisal_post_expiry_date, prev_vote_count + 1
     //         );
     //     } else {
-    //         nft_appraisal_member_count.write(
+    //         nft_appraisal_power_count.write(
     //             collection_address, token_id, appraisal_post_expiry_date, prev_vote_count - 1
     //         );
     //     }
     //     return ();
     // }
 
-    // func _check_power_token_amount{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    //     appraisal_value: Uint256, power_token_amount: Uint256
-    // ) {
-    //     let (appraisal_is_zero) = uint256_eq(appraisal_value, Uint256(0, 0));
-    //     if (appraisal_is_zero == TRUE) {
-    //         let (power_is_zero) = uint256_eq(power_token_amount, Uint256(0, 0));
-    //         if (power_is_zero == FALSE) {
-    //             assert TRUE = FALSE;
-    //             return ();
-    //         }
-    //         tempvar range_check_ptr = range_check_ptr;
-    //     } else {
-    //         tempvar range_check_ptr = range_check_ptr;
-    //     }
-    //     return ();
-    // }
+    func _check_power_token_amount{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        appraisal_value: Uint256, power_token_amount: Uint256
+    ) {
+        let (appraisal_is_zero) = uint256_eq(appraisal_value, Uint256(0, 0));
+        if (appraisal_is_zero == TRUE) {
+            assert_uint256_eq(power_token_amount, Uint256(0, 0));
+            tempvar range_check_ptr = range_check_ptr;
+        } else {
+            tempvar range_check_ptr = range_check_ptr;
+        }
+        return ();
+    }
 
     // func _appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     //     collection_address: felt,
@@ -182,22 +214,8 @@ namespace FIN {
     //     appraisal_value: Uint256,
     //     power_token_amount: Uint256,
     // ) -> (success: felt) {
-    //     let (has_changed, increase_vote) = _vote_count_has_changed(
-    //         collection_address, from_, token_id, appraisal_post_expiry_date, power_token_amount
-    //     );
-    //     if (has_changed == TRUE) {
-    //         _update_nft_appraisal_member_count(
-    //             collection_address, token_id, appraisal_post_expiry_date, increase_vote
-    //         );
-    //         tempvar syscall_ptr = syscall_ptr;
-    //         tempvar pedersen_ptr = pedersen_ptr;
-    //         tempvar range_check_ptr = range_check_ptr;
-    //     } else {
-    //         tempvar syscall_ptr = syscall_ptr;
-    //         tempvar pedersen_ptr = pedersen_ptr;
-    //         tempvar range_check_ptr = range_check_ptr;
-    //     }
-    //     nft_appraisals.write(
+
+    // nft_appraisals.write(
     //         collection_address,
     //         from_,
     //         token_id,
@@ -207,6 +225,50 @@ namespace FIN {
     //     nft_appraised.emit(collection_address, from_, token_id);
     //     return (success=TRUE);
     // }
+
+    func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        collection_address: felt,
+        token_id: Uint256,
+        appraiser: felt,
+        manager: felt,
+        appraisal_post_expiry_date: felt,
+        appraisal_value: Uint256,
+        power_token_amount: Uint256,
+    ) -> (success: felt) {
+        _check_power_token_amount(appraisal_value, power_token_amount);
+        let (appraisal: Appraisal) = nft_appraisals.read(
+            collection_address, token_id, appraiser, manager, appraisal_post_expiry_date
+        );
+        let (power_has_increased: felt) = uint256_lt(
+            appraisal.power_token_amount, power_token_amount
+        );
+        let (old_power_count: Uint256) = nft_appraisal_power_count.read(
+            collection_address, token_id, appraisal_post_expiry_date
+        );
+        if (power_has_increased == TRUE) {
+            let (diff: Uint256) = SafeUint256.sub_lt(
+                power_token_amount, appraisal.power_token_amount
+            );
+            let (new_power_count: Uint256) = SafeUint256.add(old_power_count, diff);
+        } else {
+            let (diff: Uint256) = SafeUint256.sub_le(
+                appraisal.power_token_amount, power_token_amount
+            );
+            let (new_power_count: Uint256) = SafeUint256.sub_le(old_power_count, diff);
+        }
+        nft_appraisal_power_count.write(
+            collection_address, token_id, appraisal_post_expiry_date, new_power_count
+        );
+        nft_appraisals.write(
+            collection_address,
+            token_id,
+            appraiser,
+            manager,
+            appraisal_post_expiry_date,
+            Appraisal(appraisal_value, power_token_amount),
+        );
+        return (success=TRUE);
+    }
 
     // func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     //     collection_address: felt,
@@ -324,7 +386,7 @@ namespace FIN {
     // ) -> (success: felt) {
     //     let (block_timestamp) = get_block_timestamp();
     //     assert_in_range(block_timestamp, appraisal_post_expiry_date, fundraising_post_expiry_date);
-    //     let (appraisal_member_count) = nft_appraisal_member_count.read(
+    //     let (appraisal_member_count) = nft_appraisal_power_count.read(
     //         collection_address, token_id, appraisal_post_expiry_date
     //     );
     //     assert_not_zero(appraisal_member_count);
