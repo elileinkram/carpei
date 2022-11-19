@@ -176,6 +176,7 @@ func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_pt
         tempvar range_check_ptr = range_check_ptr;
     } else {
         let (manager_balance: Uint256) = appraisal_token_allowances.read(appraiser, caller);
+        assert_uint256_le(Uint256(0, 0), manager_balance);
         assert_uint256_le(power_token_amount, manager_balance);
         tempvar syscall_ptr = syscall_ptr;
         tempvar pedersen_ptr = pedersen_ptr;

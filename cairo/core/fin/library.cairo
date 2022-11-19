@@ -44,10 +44,6 @@ func power_token_balances(owner: felt) -> (amount: Uint256) {
 }
 
 @storage_var
-func power_token_allowances(owner: felt, spender: felt) -> (amount: Uint256) {
-}
-
-@storage_var
 func appraisal_token_balances(owner: felt) -> (amount: Uint256) {
 }
 
