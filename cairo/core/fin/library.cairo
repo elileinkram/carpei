@@ -209,31 +209,41 @@ namespace FIN {
     func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         collection_address: felt,
         token_id: Uint256,
-        appraiser: felt,
-        manager: felt,
+        account: felt,
+        delegate: felt,
         appraisal_post_expiry_date: felt,
         appraisal_value: Uint256,
+        old_power_token_amount: Uint256,
         power_token_amount: Uint256,
     ) -> (success: felt) {
         alloc_locals;
+        let (caller) = get_caller_address();
+        if (account == caller) {
+            tempvar syscall_ptr = syscall_ptr;
+            tempvar pedersen_ptr = pedersen_ptr;
+            tempvar range_check_ptr = range_check_ptr;
+        } else {
+            let (manager_balance: Uint256) = appraisal_token_allowances.read(account, delegate);
+            assert delegate = caller;
+            assert_uint256_le(old_power_token_amount, manager_balance);
+            assert_uint256_le(power_token_amount, manager_balance);
+            tempvar syscall_ptr = syscall_ptr;
+            tempvar pedersen_ptr = pedersen_ptr;
+            tempvar range_check_ptr = range_check_ptr;
+        }
         _check_power_token_amount(appraisal_value, power_token_amount);
-        let (appraisal: Appraisal) = nft_appraisals.read(
-            collection_address, token_id, appraiser, manager, appraisal_post_expiry_date
-        );
-        let (is_first_time_voter) = uint256_eq(appraisal.power_token_amount, Uint256(0, 0));
+        let (is_first_time_voter) = uint256_eq(old_power_token_amount, Uint256(0, 0));
         if (is_first_time_voter == TRUE) {
-            let (old_number_of_votes: felt) = vote_balances.read(appraiser);
+            let (old_number_of_votes: felt) = vote_balances.read(account);
             let new_number_of_votes: felt = old_number_of_votes + 1;
             assert_lt(old_number_of_votes, new_number_of_votes);
-            vote_balances.write(appraiser, new_number_of_votes);
+            vote_balances.write(account, new_number_of_votes);
             tempvar power_has_increased = TRUE;
             tempvar syscall_ptr = syscall_ptr;
             tempvar pedersen_ptr = pedersen_ptr;
             tempvar range_check_ptr = range_check_ptr;
         } else {
-            let (has_increased: felt) = uint256_lt(
-                appraisal.power_token_amount, power_token_amount
-            );
+            let (has_increased: felt) = uint256_lt(old_power_token_amount, power_token_amount);
             tempvar power_has_increased = has_increased;
             tempvar syscall_ptr = syscall_ptr;
             tempvar pedersen_ptr = pedersen_ptr;
@@ -243,26 +253,22 @@ namespace FIN {
             collection_address, token_id, appraisal_post_expiry_date
         );
         if (power_has_increased == TRUE) {
-            let (diff: Uint256) = SafeUint256.sub_lt(
-                power_token_amount, appraisal.power_token_amount
-            );
+            let (diff: Uint256) = SafeUint256.sub_lt(power_token_amount, old_power_token_amount);
             let (new_power_count: Uint256) = SafeUint256.add(old_power_count, diff);
             nft_appraisal_power_count.write(
                 collection_address, token_id, appraisal_post_expiry_date, new_power_count
             );
         } else {
-            let (diff: Uint256) = SafeUint256.sub_le(
-                appraisal.power_token_amount, power_token_amount
-            );
+            let (diff: Uint256) = SafeUint256.sub_le(old_power_token_amount, power_token_amount);
             let (new_power_count: Uint256) = SafeUint256.sub_le(old_power_count, diff);
             nft_appraisal_power_count.write(
                 collection_address, token_id, appraisal_post_expiry_date, new_power_count
             );
             let (decrement_voter_balance) = uint256_eq(diff, power_token_amount);
             if (decrement_voter_balance == TRUE) {
-                let (old_number_of_votes: felt) = vote_balances.read(appraiser);
+                let (old_number_of_votes: felt) = vote_balances.read(account);
                 let new_number_of_votes: felt = old_number_of_votes - 1;
-                vote_balances.write(appraiser, new_number_of_votes);
+                vote_balances.write(account, new_number_of_votes);
                 tempvar syscall_ptr = syscall_ptr;
                 tempvar pedersen_ptr = pedersen_ptr;
                 tempvar range_check_ptr = range_check_ptr;
@@ -275,8 +281,8 @@ namespace FIN {
         nft_appraisals.write(
             collection_address,
             token_id,
-            appraiser,
-            manager,
+            account,
+            delegate,
             appraisal_post_expiry_date,
             Appraisal(appraisal_value, power_token_amount),
         );

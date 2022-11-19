@@ -154,36 +154,24 @@ func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_pt
     collection_address: felt,
     token_id: Uint256,
     l1_native: felt,
-    appraiser: felt,
+    account: felt,
+    delegate: felt,
     appraisal_value: Uint256,
     power_token_amount: Uint256,
 ) -> (success: felt) {
     alloc_locals;
     uint256_check(appraisal_value);
     uint256_check(power_token_amount);
-    let (user_balance) = ERC20.balance_of(appraiser);
+    let (user_balance) = ERC20.balance_of(account);
     assert_uint256_le(power_token_amount, user_balance);
-    let (power_balance) = power_token_balances.read(appraiser);
+    let (power_balance) = power_token_balances.read(account);
     let (increase_power_balance) = uint256_lt(power_balance, power_token_amount);
     if (increase_power_balance == TRUE) {
-        power_token_balances.write(appraiser, power_token_amount);
+        power_token_balances.write(account, power_token_amount);
         tempvar syscall_ptr = syscall_ptr;
         tempvar pedersen_ptr = pedersen_ptr;
         tempvar range_check_ptr = range_check_ptr;
     } else {
-        tempvar syscall_ptr = syscall_ptr;
-        tempvar pedersen_ptr = pedersen_ptr;
-        tempvar range_check_ptr = range_check_ptr;
-    }
-    let (caller) = get_caller_address();
-    if (appraiser == caller) {
-        tempvar syscall_ptr = syscall_ptr;
-        tempvar pedersen_ptr = pedersen_ptr;
-        tempvar range_check_ptr = range_check_ptr;
-    } else {
-        let (manager_balance: Uint256) = appraisal_token_allowances.read(appraiser, caller);
-        assert_uint256_lt(Uint256(0, 0), manager_balance);
-        assert_uint256_le(power_token_amount, manager_balance);
         tempvar syscall_ptr = syscall_ptr;
         tempvar pedersen_ptr = pedersen_ptr;
         tempvar range_check_ptr = range_check_ptr;
@@ -194,13 +182,17 @@ func appraise_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_pt
     let appraisal_post_expiry = nft_.appraisal_post_expiry_date;
     let (block_timestamp) = get_block_timestamp();
     assert_lt(block_timestamp, appraisal_post_expiry);
+    let (appraisal: Appraisal) = nft_appraisals.read(
+        collection_address, token_id, account, delegate, appraisal_post_expiry
+    );
     return FIN.appraise_nft(
         collection_address,
         token_id,
-        appraiser,
-        caller,
+        account,
+        delegate,
         appraisal_post_expiry,
         appraisal_value,
+        appraisal.power_token_amount,
         power_token_amount,
     );
 }
