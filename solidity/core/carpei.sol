@@ -30,7 +30,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
 
     IStarknetMessaging public immutable STARKNET_CROSS_DOMAIN_MESSENGER;
     uint256 public immutable L2_RECEIVER;
-    uint256 public constant DEPOSIT_FEES_L1_CODE = 0;
+    uint256 public constant RECEIVE_FEES_FROM_L2_CODE = 0;
     uint256 public constant felt_upper_bound = 2**252;
 
     constructor(
@@ -70,7 +70,7 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         uint256[] memory payload = new uint256[](3);
         payload[0] = _uint256Addr(recipient);
         payload[1] = amount;
-        payload[2] = DEPOSIT_FEES_L1_CODE;
+        payload[2] = RECEIVE_FEES_FROM_L2_CODE;
         STARKNET_CROSS_DOMAIN_MESSENGER.consumeMessageFromL2(
             L2_RECEIVER,
             payload
