@@ -23,7 +23,7 @@ from starkware.cairo.common.math import (
     assert_lt,
     assert_le,
 )
-from utils.constants.library import L1_NFT_CONTRACT_ADDRESS, DEPOSIT_FEES_L1_CODE
+from utils.constants.library import L1_NFT_CONTRACT_ADDRESS, SEND_FEES_TO_L1_CODE
 from starkware.starknet.common.messages import send_message_to_l1
 from starkware.cairo.common.alloc import alloc
 
@@ -143,7 +143,7 @@ namespace FIN {
         let (payload: felt*) = alloc();
         assert payload[0] = from_;
         assert payload[1] = amount;
-        assert payload[2] = DEPOSIT_FEES_L1_CODE;
+        assert payload[2] = SEND_FEES_TO_L1_CODE;
 
         send_message_to_l1(L1_NFT_CONTRACT_ADDRESS, 3, payload);
         return (success=TRUE);
