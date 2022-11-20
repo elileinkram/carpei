@@ -5,13 +5,19 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from utils.constants.library import IERC721_RECEIVER_ID
-from starkware.starknet.common.syscalls import get_contract_address, get_block_timestamp
+from starkware.starknet.common.syscalls import (
+    get_contract_address,
+    get_block_timestamp,
+    get_caller_address,
+)
+from token.ERC721.IERC721 import IERC721
 from token.ERC721.IERC721MintableBurnable import IERC721MintableBurnable
 
 from starkware.cairo.common.uint256 import Uint256, uint256_check, assert_uint256_eq
 from starkware.cairo.common.math import assert_not_zero, assert_le, split_felt, assert_lt
 from starkware.cairo.common.bool import TRUE, FALSE
 from security.safemath.library import SafeUint256
+from starkware.cairo.common.alloc import alloc
 
 struct NFT_ {
     from_: felt,
@@ -115,6 +121,25 @@ namespace NFT {
             NFT_(from_, appraisal_post_expiry_date, debt_post_expiry_date, key),
         );
         return ();
+    }
+
+    func withdraw_nft{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        collection_address: felt, token_id: Uint256
+    ) -> (success: felt) {
+        alloc_locals;
+        let (nft_) = nft_listings.read(collection_address, token_id, FALSE);
+        assert_not_zero(nft_.key.low * nft_.key.high);
+        let (block_timestamp) = get_block_timestamp();
+        assert_le(nft_.appraisal_post_expiry_date, block_timestamp);
+        let (caller) = get_caller_address();
+        let (key_contract_address) = nft_key_contract_address.read();
+        let (owner: felt) = IERC721MintableBurnable.ownerOf(key_contract_address, nft_.key);
+        assert owner = caller;
+        IERC721MintableBurnable.burn(key_contract_address, token_id);
+        let (contract_address: felt) = get_contract_address();
+        let (payload: felt*) = alloc();
+        IERC721.safeTransferFrom(collection_address, contract_address, owner, token_id, 0, payload);
+        return (success=TRUE);
     }
 
     func _onReceived{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
