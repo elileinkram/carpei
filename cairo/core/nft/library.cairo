@@ -127,7 +127,7 @@ namespace NFT {
         collection_address: felt, token_id: Uint256
     ) -> (success: felt) {
         alloc_locals;
-        let (nft_) = nft_listings.read(collection_address, token_id, FALSE);
+        let (nft_: NFT_) = nft_listings.read(collection_address, token_id, FALSE);
         assert_not_zero(nft_.key.low * nft_.key.high);
         let (block_timestamp) = get_block_timestamp();
         assert_le(nft_.appraisal_post_expiry_date, block_timestamp);
@@ -135,10 +135,13 @@ namespace NFT {
         let (key_contract_address) = nft_key_contract_address.read();
         let (owner: felt) = IERC721MintableBurnable.ownerOf(key_contract_address, nft_.key);
         assert owner = caller;
-        IERC721MintableBurnable.burn(key_contract_address, token_id);
+        IERC721MintableBurnable.burn(key_contract_address, nft_.key);
+        nft_.key.low = 0;
+        nft_.key.high = 0;
         let (contract_address: felt) = get_contract_address();
-        let (payload: felt*) = alloc();
-        IERC721.safeTransferFrom(collection_address, contract_address, owner, token_id, 0, payload);
+        IERC721.safeTransferFrom(
+            collection_address, contract_address, owner, token_id, 0, cast(new (), felt*)
+        );
         return (success=TRUE);
     }
 
