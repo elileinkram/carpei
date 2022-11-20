@@ -51,8 +51,9 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         );
     }
 
-    function approveFeeManager(address addr) public returns (bool) {
-        managerOf[msg.sender] = addr;
+    function approveFeeManager(address delegate) public returns (bool) {
+        require(delegate != address(0));
+        managerOf[msg.sender] = delegate;
         return true;
     }
 
@@ -110,7 +111,6 @@ contract Carpei is IERC721Receiver, ERC165, ERC721 {
         uint256 tokenId,
         bytes calldata data
     ) external returns (bytes4) {
-        require(msg.sender != address(0));
         bytes32 nftHash = keccak256(abi.encode(msg.sender, tokenId));
         NFT storage nft = nonFungibles[nftHash];
         require(nft.key == 0);

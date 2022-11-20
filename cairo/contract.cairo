@@ -140,7 +140,7 @@ func onERC721Received{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
     alloc_locals;
     let (caller) = get_caller_address();
     let is_approved = FIN.is_approved_or_owner_of_fees(caller, from_);
-    assert_not_zero(is_approved * caller);
+    assert_not_zero(is_approved);
     let (nft_appraisal_fee_) = nft_appraisal_fee.read();
     let (available_fees) = user_fees.read(from_);
     assert_le(nft_appraisal_fee_, available_fees);
@@ -343,6 +343,7 @@ func transfer_fees_to_l1{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 func approveFeeManager{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     delegate: felt
 ) -> (success: felt) {
+    assert_not_zero(delegate);
     let (from_) = get_caller_address();
     user_fee_delegate.write(from_, delegate);
     return (success=TRUE);
